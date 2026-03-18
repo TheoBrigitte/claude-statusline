@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- Replace custom flag parsing with standard library `flag` package
+
 ## [0.1.0] - 2026-03-18
 
 ### Added

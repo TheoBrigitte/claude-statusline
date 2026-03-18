@@ -4,6 +4,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -19,25 +20,14 @@ import (
 )
 
 func main() {
-	configPath := parseArgs()
+	var configPath string
+	flag.StringVar(&configPath, "config", "", "Path to config file (optional)")
+	flag.Parse()
+
 	if err := run(configPath); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-}
-
-// parseArgs handles the single optional --config flag.
-func parseArgs() string {
-	args := os.Args[1:]
-	for i := 0; i < len(args); i++ {
-		if args[i] == "--config" && i+1 < len(args) {
-			return args[i+1]
-		}
-		if v, ok := strings.CutPrefix(args[i], "--config="); ok {
-			return v
-		}
-	}
-	return ""
 }
 
 // styleCache avoids re-parsing the same style string across modules.
