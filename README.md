@@ -2,7 +2,7 @@
 
 # claude-statusline
 
-A fast and configurable [status line](https://code.claude.com/docs/en/statusline) for [Claude Code](https://claude.ai/code) sessions.
+🚀 A fast and configurable [status line](https://code.claude.com/docs/en/statusline) for [Claude Code](https://claude.ai/code) sessions.
 
 
 [![GitHub release](https://img.shields.io/github/release/TheoBrigitte/claude-statusline.svg?color)](https://github.com/TheoBrigitte/claude-statusline/releases)
@@ -21,7 +21,7 @@ A fast and configurable [status line](https://code.claude.com/docs/en/statusline
 
 ## Features
 
-**Modules** — each independently configurable:
+📦 **Modules** — each independently configurable:
 - **Model** — active Claude model name (e.g. `[Opus 4.6]`)
 - **Context bar** — visual progress bar of context window usage (`###------`)
 - **Context tokens** — numeric token counts with SI formatting (e.g. `42k/200k tokens`)
@@ -30,29 +30,29 @@ A fast and configurable [status line](https://code.claude.com/docs/en/statusline
 - **Duration** — total API duration (`4m 5s`)
 - **Status** — live Claude API health from `status.claude.com` with 10-minute file-based cache (🟢/🟡/🔴)
 
-**Configuration** (TOML):
+⚙️ **Configuration** (TOML):
 - Per-module: `disabled`, `style`, `symbol`, `format` (`{value}`/`{symbol}` placeholders), `min_term_width`, `max_term_width`
 - Threshold-based styling on cost and context bar (warn/critical with different colors)
 - Custom line layout templates — modules are `$tokens` placed freely in line strings
 - Context bar customization: width, fill/empty characters
 
-**Simple styling**:
+🎨 **Simple styling**:
 - Named colors (`red`, `cyan`, `bright_green`…), 24-bit hex (`fg:#c792ea`, `bg:#1a1a2e`)
 - Modifiers: `bold`, `dim`, `italic`, `underline` — freely composable
 
-**Responsive layout**:
+📏 **Responsive layout**:
 - Auto-wrapping: segments overflow to new lines when exceeding terminal width
 - Per-module `min_term_width` and `max_term_width` to hide based on terminals width
 - Terminal width detection via `/dev/tty` (works with piped stdin)
 
-**Performance**:
+🚀 **Performance**:
 - Designed with speed in mind, and compiled as a static Golang binary.
 - Extremely fast rendering < 0.019 ms
 - See [performance benchmarks](#performance)
 
-## Install
+## ⚡ Install
 
-### ⚡ Method 1: curl installer (recommended)
+### 🚀 Method 1: curl installer (recommended)
 
 ```sh
 OS=linux; ARCH=amd64
@@ -64,7 +64,7 @@ Also supports linux, darwin (macOS), and windows on amd64 and arm64, see [Makefi
 
 This downloads the binary to `~/.local/bin/claude-statusline`.
 
-###  Method 2: go install
+### 📦 Method 2: go install
 
 Requires the Golang toolchain.
 
@@ -80,14 +80,14 @@ After installing the binary, configure it into Claude Code in `~/.claude/setting
 }
 ```
 
-## Quick Start
-
 Works out of the box with sensible defaults — no config file needed. The default
 output looks like:
 
 <p align="center">
     <img src="assets/claude-statusline-only.png" alt="claude-statusline only screenshot" height="800px">
 </p>
+
+## ⚙️ Configuration
 
 To customize, create `~/.config/claude-statusline.toml`:
 
@@ -111,8 +111,6 @@ warn_style = "yellow"
 critical_threshold = 80.0
 critical_style = "bold red"
 ```
-
-## Configuration
 
 Config file discovery order:
 
@@ -311,7 +309,7 @@ symbol = " "    # nf-fa-clock
 
 Browse icons at [nerdfonts.com/cheat-sheet](https://www.nerdfonts.com/cheat-sheet).
 
-## Examples
+## 📚 Examples
 
 ### 1. Minimal
 
@@ -460,7 +458,7 @@ disabled = true
 disabled = true
 ```
 
-## Responsive Layout
+## 📏 Responsive Layout
 
 The status line adapts to your terminal width automatically:
 
@@ -476,7 +474,7 @@ The status line adapts to your terminal width automatically:
 This means the same config works well across different terminal sizes — from a
 narrow split pane to a full-width monitor.
 
-## Performance
+## 🚀 Performance
 
 `claude-statusline` runs on every prompt render, so it's built to be fast.
 The full pipeline — config loading + JSON decoding + rendering + writing —
@@ -514,7 +512,7 @@ Run benchmarks yourself:
 make bench
 ```
 
-## Building
+## 🛠️ Building
 
 ```sh
 make build          # Build for current OS/arch
@@ -524,13 +522,13 @@ make lint-all       # Run all linters
 make install        # Build and install to ~/.local/bin
 ```
 
-## Credits
+## 🙏 Credits
 
 - [Claude Code](https://claude.ai/code) for the session JSON API and status line integration
 - [Starship](https://starship.rs) for the style syntax and rendering inspiration
 - [Nerd Fonts](https://www.nerdfonts.com) for the extensive icon library
 - [CShip](https://github.com/stephenleo/cship) for the inspiration on configuration format
 
-## License
+## 📄 License
 
 MIT
