@@ -55,11 +55,14 @@ A fast and configurable [status line](https://code.claude.com/docs/en/statusline
 ### ⚡ Method 1: curl installer (recommended)
 
 ```sh
-curl --create-dirs -sSLo ~/.local/bin/claude-statusline https://github.com/TheoBrigitte/claude-statusline/releases/latest/download/claude-statusline.$(uname -s)-$(uname -m)
+OS=linux; ARCH=amd64
+curl --create-dirs -sSLo ~/.local/bin/claude-statusline "https://github.com/TheoBrigitte/claude-statusline/releases/latest/download/claude-statusline.$OS-$ARCH"
 chmod +x ~/.local/bin/claude-statusline
 ```
 
-Auto-detects your OS and architecture (macOS arm64/x86_64, Linux x86_64/aarch64), downloads the binary to `~/.local/bin/claude-statusline`.
+Also supports linux, darwin (macOS), and windows on amd64 and arm64, see [Makefile](Makefile).
+
+This downloads the binary to `~/.local/bin/claude-statusline`.
 
 ###  Method 2: go install
 
