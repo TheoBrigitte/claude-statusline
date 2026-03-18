@@ -1,0 +1,29 @@
+name: release
+
+on:
+  push:
+    tags:
+    - v*
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v6
+      with:
+        fetch-depth: 0
+    - uses: actions/setup-go@v6
+      with:
+        go-version: stable
+    - run: make build-all
+      env:
+        BUILD_USER: github-action
+    - name: Generate Changelog
+      id: generate_changelog
+      uses: ffurrer2/extract-release-notes@v3
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
+      with:
+        body: ${{steps.generate_changelog.outputs.release_notes}}
+        files: build/*
+        draft: true

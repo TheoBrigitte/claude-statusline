@@ -1,0 +1,29 @@
+name: build
+
+on:
+  push:
+    branches:
+    - '*'
+    tags-ignore:
+    - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v6
+      with:
+        fetch-depth: 0
+    - uses: actions/setup-go@v6
+      with:
+        go-version: stable
+    - uses: golangci/golangci-lint-action@v9
+    - name: go list
+      run: go list -json -deps ./... > go.list
+    - uses: sonatype-nexus-community/nancy-github-action@main
+      with:
+        nancyCommand: sleuth --username ${{ vars.OSSI_USERNAME }} --token ${{ secrets.OSSI_TOKEN }}
+    - run: make test
+    - run: make build-all
+      env:
+        BUILD_USER: github-action
