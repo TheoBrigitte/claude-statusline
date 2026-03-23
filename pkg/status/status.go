@@ -52,7 +52,10 @@ func Get() string {
 					if time.Since(info.ModTime()) < cacheDuration {
 						// Cache is fresh — return it without hitting the API.
 						if cached, err := io.ReadAll(statusFile); err == nil {
-							return strings.TrimSpace(string(cached))
+							status := strings.TrimSpace(string(cached))
+							if status != "" {
+								return status
+							}
 						}
 					} else {
 						// Cache is stale — truncate and schedule a write-back

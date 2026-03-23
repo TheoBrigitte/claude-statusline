@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- Empty status component rendering as blank segment
+
 ### Changed
 
 - Replace custom flag parsing with standard library `flag` package
