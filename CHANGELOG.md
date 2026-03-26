@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- `--log-file` flag to log raw status JSON updates to a `.jsonl` file
+
 ### Fixed
 
 - Empty status component rendering as blank segment

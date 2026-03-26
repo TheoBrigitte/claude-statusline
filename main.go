@@ -3,6 +3,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -21,10 +22,12 @@ import (
 
 func main() {
 	var configPath string
+	var logFile string
 	flag.StringVar(&configPath, "config", "", "Path to config file (optional)")
+	flag.StringVar(&logFile, "log-file", "", "Path to a .jsonl file to append raw status updates to")
 	flag.Parse()
 
-	if err := run(configPath); err != nil {
+	if err := run(configPath, logFile); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
@@ -45,19 +48,49 @@ func cachedParse(s string) *style.Style {
 	return st
 }
 
-func run(configPath string) error {
-	return runWith(configPath, os.Stdin, os.Stdout, terminal.Width())
+func run(configPath, logFile string) error {
+	return runWith(configPath, logFile, os.Stdin, os.Stdout, terminal.Width())
+}
+
+// appendLog appends a raw JSON blob as a single line to the given file.
+func appendLog(path string, raw []byte) error {
+	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644) //nolint:gosec // G302: log file, world-readable is fine
+	if err != nil {
+		return err
+	}
+	defer f.Close() //nolint:errcheck
+
+	// Compact to ensure single-line output.
+	var compact bytes.Buffer
+	if err := json.Compact(&compact, raw); err != nil {
+		return err
+	}
+	compact.WriteByte('\n')
+	_, err = f.Write(compact.Bytes())
+	return err
 }
 
 // runWith is the testable core: loads config, decodes JSON, renders output.
-func runWith(configPath string, r io.Reader, w io.Writer, termWidth int) error {
+func runWith(configPath, logFile string, r io.Reader, w io.Writer, termWidth int) error {
 	cfg, err := config.Load(configPath)
 	if err != nil {
 		return fmt.Errorf("loading config: %w", err)
 	}
 
+	// Buffer stdin so we can both log and decode it.
+	raw, err := io.ReadAll(r)
+	if err != nil {
+		return fmt.Errorf("reading stdin: %w", err)
+	}
+
+	if logFile != "" {
+		if err := appendLog(logFile, raw); err != nil {
+			fmt.Fprintf(os.Stderr, "warning: log-file write failed: %v\n", err)
+		}
+	}
+
 	var in model.Input
-	if err := json.NewDecoder(r).Decode(&in); err != nil {
+	if err := json.Unmarshal(raw, &in); err != nil {
 		return fmt.Errorf("parsing JSON from stdin: %w", err)
 	}
 
