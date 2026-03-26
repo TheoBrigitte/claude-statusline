@@ -28,6 +28,8 @@ type Config struct {
 	Cost          ThresholdConfig `toml:"cost"`
 	Duration      ModuleConfig    `toml:"duration"`
 	Status        ModuleConfig    `toml:"status"`
+	RateLimit5h   ThresholdConfig `toml:"rate_limit_5h"`
+	RateLimit7d   ThresholdConfig `toml:"rate_limit_7d"`
 }
 
 // ModuleConfig holds fields common to every module.
@@ -62,7 +64,7 @@ type ContextBarCfg struct {
 func Default() Config {
 	return Config{
 		Separator: " | ",
-		Lines:     []string{"$model | $context_bar $context_tokens $context_pct | $cost | $duration | $status"},
+		Lines:     []string{"$model | $context_bar $context_tokens $context_pct | $rate_5h $rate_7d | $cost | $duration | $status"},
 		Padding:   5,
 
 		Model: ModuleConfig{
@@ -100,6 +102,30 @@ func Default() Config {
 			Symbol: "⏱️ ",
 		},
 		Status: ModuleConfig{},
+		RateLimit5h: ThresholdConfig{
+			ModuleConfig: ModuleConfig{
+				Symbol:       "󰊚 5h: ",
+				Format:       "{symbol}{value}% ~{reset}",
+				Style:        "cyan",
+				MinTermWidth: 100,
+			},
+			WarnThreshold:     60,
+			WarnStyle:         "fg:#ff8800",
+			CriticalThreshold: 90,
+			CriticalStyle:     "red",
+		},
+		RateLimit7d: ThresholdConfig{
+			ModuleConfig: ModuleConfig{
+				Symbol:       "󰊚 7d: ",
+				Format:       "{symbol}{value}% ~{reset}",
+				Style:        "purple",
+				MinTermWidth: 100,
+			},
+			WarnThreshold:     60,
+			WarnStyle:         "fg:#ff8800",
+			CriticalThreshold: 90,
+			CriticalStyle:     "red",
+		},
 	}
 }
 

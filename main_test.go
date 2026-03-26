@@ -43,7 +43,7 @@ func testConfig() config.Config {
 func BenchmarkRunWith(b *testing.B) {
 	for b.Loop() {
 		r := strings.NewReader(testInputJSON)
-		if err := runWith("", r, io.Discard, 120); err != nil {
+		if err := runWith("", "", r, io.Discard, 120); err != nil {
 			b.Fatal(err)
 		}
 	}

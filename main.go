@@ -138,6 +138,8 @@ func renderModules(cfg config.Config, in model.Input, termWidth int) map[string]
 		"$cost":           {"", 0},
 		"$duration":       {"", 0},
 		"$status":         {"", 0},
+		"$rate_5h":        {"", 0},
+		"$rate_7d":        {"", 0},
 	}
 
 	// Model
@@ -211,6 +213,26 @@ func renderModules(cfg config.Config, in model.Input, termWidth int) map[string]
 		m["$status"] = moduleResult{s.Sprint(raw), len(raw)}
 	}
 
+	// Rate limit 5h
+	if shouldRenderModule(cfg.RateLimit5h.ModuleConfig, termWidth) {
+		pct := in.RateLimits.FiveHour.UsedPercentage
+		value := fmt.Sprintf("%d", pct)
+		reset := format.TimeUntil(in.RateLimits.FiveHour.ResetsAt)
+		raw := applyRateLimitFormat(cfg.RateLimit5h.Format, value, cfg.RateLimit5h.Symbol, reset)
+		s := resolveThresholdStyle(cfg.RateLimit5h, float64(pct))
+		m["$rate_5h"] = moduleResult{s.Sprint(raw), len(raw)}
+	}
+
+	// Rate limit 7d
+	if shouldRenderModule(cfg.RateLimit7d.ModuleConfig, termWidth) {
+		pct := in.RateLimits.SevenDay.UsedPercentage
+		value := fmt.Sprintf("%d", pct)
+		reset := format.TimeUntil(in.RateLimits.SevenDay.ResetsAt)
+		raw := applyRateLimitFormat(cfg.RateLimit7d.Format, value, cfg.RateLimit7d.Symbol, reset)
+		s := resolveThresholdStyle(cfg.RateLimit7d, float64(pct))
+		m["$rate_7d"] = moduleResult{s.Sprint(raw), len(raw)}
+	}
+
 	return m
 }
 
@@ -227,6 +249,28 @@ func applyFormat(format, value, symbol string) string {
 	s := strings.Replace(format, "{value}", value, 1)
 	s = strings.Replace(s, "{symbol}", symbol, 1)
 	return s
+}
+
+// applyRateLimitFormat extends applyFormat with a {reset} placeholder for countdown display.
+// If reset is empty (timestamp is zero or in the past), any text between the last
+// non-space before {reset} and {reset} itself is removed to avoid dangling prefixes like "~".
+func applyRateLimitFormat(f, value, symbol, reset string) string {
+	s := applyFormat(f, value, symbol)
+	if reset != "" {
+		s = strings.Replace(s, "{reset}", reset, 1)
+	} else {
+		// Remove {reset} and any preceding non-space characters (e.g. "~")
+		// that only make sense when a reset value is present.
+		if idx := strings.Index(s, "{reset}"); idx >= 0 {
+			// Walk back over non-space chars that prefix {reset}
+			start := idx
+			for start > 0 && s[start-1] != ' ' {
+				start--
+			}
+			s = s[:start] + s[idx+len("{reset}"):]
+		}
+	}
+	return strings.TrimSpace(s)
 }
 
 // resolveThresholdStyle picks the appropriate style based on threshold config.

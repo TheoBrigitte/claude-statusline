@@ -36,7 +36,20 @@ type Input struct {
 		UsedPercentage      *float64        `json:"used_percentage"`
 		RemainingPercentage *float64        `json:"remaining_percentage"`
 	} `json:"context_window"`
-	Exceeds200kTokens bool `json:"exceeds_200k_tokens"`
+	Exceeds200kTokens bool       `json:"exceeds_200k_tokens"`
+	RateLimits        RateLimits `json:"rate_limits"`
+}
+
+// RateLimits holds the 5-hour and 7-day usage rate limits.
+type RateLimits struct {
+	FiveHour RateLimit `json:"five_hour"`
+	SevenDay RateLimit `json:"seven_day"`
+}
+
+// RateLimit represents a single rate limit bucket.
+type RateLimit struct {
+	UsedPercentage int   `json:"used_percentage"`
+	ResetsAt       int64 `json:"resets_at"`
 }
 
 // ParseCurrentUsage sums the values in current_usage, which can be either

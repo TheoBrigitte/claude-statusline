@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Added
 
 - `--log-file` flag to log raw status JSON updates to a `.jsonl` file
+- Rate limit modules (`$rate_5h`, `$rate_7d`) with usage %, reset countdown, threshold colors, and 󰊚 icon
 
 ### Fixed
 
