@@ -216,7 +216,7 @@ func renderModules(cfg config.Config, in model.Input, termWidth int) map[string]
 	// Rate limit 5h
 	if shouldRenderModule(cfg.RateLimit5h.ModuleConfig, termWidth) {
 		pct := in.RateLimits.FiveHour.UsedPercentage
-		value := fmt.Sprintf("%d", pct)
+		value := fmt.Sprintf("%.2f", pct)
 		reset := format.TimeUntil(in.RateLimits.FiveHour.ResetsAt)
 		raw := applyRateLimitFormat(cfg.RateLimit5h.Format, value, cfg.RateLimit5h.Symbol, reset)
 		s := resolveThresholdStyle(cfg.RateLimit5h, float64(pct))
@@ -226,7 +226,7 @@ func renderModules(cfg config.Config, in model.Input, termWidth int) map[string]
 	// Rate limit 7d
 	if shouldRenderModule(cfg.RateLimit7d.ModuleConfig, termWidth) {
 		pct := in.RateLimits.SevenDay.UsedPercentage
-		value := fmt.Sprintf("%d", pct)
+		value := fmt.Sprintf("%.2f", pct)
 		reset := format.TimeUntil(in.RateLimits.SevenDay.ResetsAt)
 		raw := applyRateLimitFormat(cfg.RateLimit7d.Format, value, cfg.RateLimit7d.Symbol, reset)
 		s := resolveThresholdStyle(cfg.RateLimit7d, float64(pct))

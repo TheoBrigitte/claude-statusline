@@ -48,8 +48,8 @@ type RateLimits struct {
 
 // RateLimit represents a single rate limit bucket.
 type RateLimit struct {
-	UsedPercentage int   `json:"used_percentage"`
-	ResetsAt       int64 `json:"resets_at"`
+	UsedPercentage float64 `json:"used_percentage"`
+	ResetsAt       int64   `json:"resets_at"`
 }
 
 // ParseCurrentUsage sums the values in current_usage, which can be either
