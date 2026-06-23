@@ -29,7 +29,7 @@ func Width() (int, error) {
 	}
 	defer f.Close() //nolint:errcheck
 
-	w, _, err := term.GetSize(int(f.Fd()))
+	w, _, err := term.GetSize(int(f.Fd())) //nolint:gosec
 	if err != nil {
 		return -1, err
 	}

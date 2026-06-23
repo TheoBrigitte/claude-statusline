@@ -58,7 +58,7 @@ func run(configPath, logFile string) error {
 	if err != nil {
 		termWidth = terminal.DefaultWidth
 		if debug {
-			fmt.Fprintf(os.Stdout, "warning: failed to get terminal width, defaulting to %d: %v\n", termWidth, err)
+			fmt.Fprintf(os.Stdout, "warning: failed to get terminal width, defaulting to %d: %v\n", termWidth, err) //nolint:errcheck
 		}
 	}
 	return runWith(configPath, logFile, os.Stdin, os.Stdout, termWidth)
