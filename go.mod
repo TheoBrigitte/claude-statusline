@@ -8,4 +8,4 @@ require (
 	golang.org/x/term v0.40.0
 )
 
-require golang.org/x/sys v0.41.0 // indirect
+require golang.org/x/sys v0.46.0 // indirect
