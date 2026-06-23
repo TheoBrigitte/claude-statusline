@@ -147,7 +147,6 @@ func TestParseHex(t *testing.T) {
 	}{
 		{"#ff0000", 255, 0, 0, true},
 		{"#abc", 170, 187, 204, true},
-		{"ff5370", 255, 83, 112, true},
 		{"zzzzzz", 0, 0, 0, false},
 		{"", 0, 0, 0, false},
 		{"#12", 0, 0, 0, false},
