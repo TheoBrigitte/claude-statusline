@@ -13,6 +13,8 @@ package style
 import (
 	"strconv"
 	"strings"
+
+	"github.com/go-playground/colors"
 )
 
 // Style holds a pre-computed ANSI prefix for wrapping text.
@@ -86,16 +88,12 @@ func (s *Style) Sprint(text string) string {
 
 // parseHex parses #RGB or #RRGGBB hex color strings.
 func parseHex(s string) (r, g, b byte, ok bool) {
-	s = strings.TrimPrefix(s, "#")
-	if len(s) == 3 {
-		s = string([]byte{s[0], s[0], s[1], s[1], s[2], s[2]})
-	}
-	if len(s) != 6 {
-		return 0, 0, 0, false
-	}
-	n, err := strconv.ParseUint(s, 16, 24)
+	hex, err := colors.ParseHEX(s)
 	if err != nil {
 		return 0, 0, 0, false
 	}
-	return byte(n >> 16), byte(n >> 8), byte(n), true
+
+	rgb := hex.ToRGB()
+
+	return rgb.R, rgb.G, rgb.B, true
 }
