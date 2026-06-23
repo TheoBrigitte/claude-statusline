@@ -20,9 +20,14 @@ import (
 	"github.com/TheoBrigitte/claude-statusline/pkg/terminal"
 )
 
+var (
+	configPath string
+	logFile    string
+	debug      bool
+)
+
 func main() {
-	var configPath string
-	var logFile string
+	flag.BoolVar(&debug, "debug", false, "Enable debug mode with verbose logging to stderr")
 	flag.StringVar(&configPath, "config", "", "Path to config file (optional)")
 	flag.StringVar(&logFile, "log-file", "", "Path to a .jsonl file to append raw status updates to")
 	flag.Parse()
@@ -49,7 +54,14 @@ func cachedParse(s string) *style.Style {
 }
 
 func run(configPath, logFile string) error {
-	return runWith(configPath, logFile, os.Stdin, os.Stdout, terminal.Width())
+	termWidth, err := terminal.Width()
+	if err != nil {
+		termWidth = terminal.DefaultWidth
+		if debug {
+			fmt.Fprintf(os.Stdout, "warning: failed to get terminal width, defaulting to %d: %v\n", termWidth, err)
+		}
+	}
+	return runWith(configPath, logFile, os.Stdin, os.Stdout, termWidth)
 }
 
 // appendLog appends a raw JSON blob as a single line to the given file.
