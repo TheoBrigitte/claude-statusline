@@ -29,10 +29,11 @@
 - **Cost** — session cost in USD (`$1.23`)
 - **Duration** — total API duration (`4m 5s`)
 - **Status** — live Claude API health from `status.claude.com` with 10-minute file-based cache (🟢/🟡/🔴)
+- **Rate limits** — 5-hour and 7-day usage limits with usage %, reset countdown, and threshold colors (`󰊚 5h: 42% ~2h30m`)
 
 ⚙️ **Configuration** (TOML):
-- Per-module: `disabled`, `style`, `symbol`, `format` (`{value}`/`{symbol}` placeholders), `min_term_width`, `max_term_width`
-- Threshold-based styling on cost and context bar (warn/critical with different colors)
+- Per-module: `disabled`, `style`, `symbol`, `format` (`{value}`/`{symbol}` placeholders, plus `{reset}` on rate limits), `min_term_width`, `max_term_width`
+- Threshold-based styling on cost, context bar, and rate limits (warn/critical with different colors)
 - Custom line layout templates — modules are `$tokens` placed freely in line strings
 - Context bar customization: width, fill/empty characters
 
@@ -87,6 +88,14 @@ output looks like:
     <img src="assets/claude-statusline-only.png" alt="claude-statusline only screenshot" height="800px">
 </p>
 
+### Command-line flags
+
+| Flag                | Description                                                     |
+|---------------------|-----------------------------------------------------------------|
+| `--config <path>`   | Path to a config file (overrides the default discovery order)   |
+| `--log-file <path>` | Append each raw status JSON update as a line to a `.jsonl` file |
+| `--debug`           | Verbose logging to stderr                                       |
+
 ## ⚙️ Configuration
 
 To customize, create `~/.config/claude-statusline.toml`:
@@ -128,8 +137,8 @@ separator = " | "
 padding = 5
 
 # Layout — each entry is one line, segments separated by `|` auto-wrap
-# Available tokens: $model $context_bar $context_tokens $context_pct $cost $duration $status
-lines = ["$model | $context_bar $context_tokens $context_pct | $cost | $duration | $status"]
+# Available tokens: $model $context_bar $context_tokens $context_pct $rate_5h $rate_7d $cost $duration $status
+lines = ["$model | $context_bar $context_tokens $context_pct | $rate_5h $rate_7d | $cost | $duration | $status"]
 ```
 
 ### Modules
@@ -169,7 +178,7 @@ Visual bar showing context window usage. Supports threshold-based color changes.
 | Field                | Default    | Description                                  |
 |----------------------|------------|----------------------------------------------|
 | `style`              | `"green"`  | Base color                                   |
-| `width`              | `0` (auto) | Fixed char width, or 0 for auto (termWidth/3, min 40) |
+| `width`              | `0` (auto) | Fixed char width, or 0 for auto              |
 | `fill_char`          | `"#"`      | Character for the filled portion             |
 | `empty_char`         | `"-"`      | Character for the empty portion              |
 | `warn_threshold`     | `40.0`     | % at which style switches to `warn_style`    |
@@ -194,8 +203,8 @@ critical_style = "bold fg:#f7768e"
 
 Displays current/total token usage like `(27k/1M tokens)`.
 
-| Field    | Default       | Description           |
-|----------|---------------|-----------------------|
+| Field    | Default       | Description                       |
+|----------|---------------|-----------------------------------|
 | `format` | `"({value})"` | Wrapped in parentheses by default |
 
 ```toml
@@ -208,8 +217,8 @@ format = "[{value}]"   # use brackets instead of parens
 
 Displays context usage percentage like `27%`.
 
-| Field    | Default      | Description         |
-|----------|--------------|---------------------|
+| Field    | Default      | Description          |
+|----------|--------------|----------------------|
 | `format` | `"{value}%"` | Appends % by default |
 
 ```toml
@@ -245,7 +254,7 @@ Displays total session wall-clock time.
 
 | Field    | Default  | Description  |
 |----------|----------|--------------|
-| `symbol` | `"⏱️ "` | Timer emoji  |
+| `symbol` | `"⏱️ "` | Timer emoji   |
 
 ```toml
 [duration]
@@ -260,6 +269,38 @@ Displays Claude API operational status as an emoji indicator (`🟢`, `🟡 degr
 ```toml
 [status]
 disabled = true   # hide if you don't care about API status
+```
+
+#### `[rate_limit_5h]` / `[rate_limit_7d]` — Usage Rate Limits
+
+Display Claude usage against the 5-hour and 7-day rate limits, as a percentage
+with a countdown until the limit resets (e.g. `󰊚 5h: 42% ~2h30m`). Both support
+threshold-based color changes. In addition to `{value}` and `{symbol}`, the
+`format` string accepts a `{reset}` placeholder for the reset countdown; when no
+reset time is available, `{reset}` and any non-space prefix (such as `~`) are
+dropped automatically.
+
+| Field                | Default                       | Description                                   |
+|----------------------|-------------------------------|-----------------------------------------------|
+| `style`              | `"cyan"` / `"purple"`         | Base color (5h / 7d)                          |
+| `symbol`             | `"󰊚 5h: "` / `"󰊚 7d: "`       | Prefix label                                  |
+| `format`             | `"{symbol}{value}% ~{reset}"` | Value, percent sign, and reset countdown      |
+| `min_term_width`     | `100`                         | Hidden on narrow terminals                    |
+| `warn_threshold`     | `60.0`                        | % at which style switches to `warn_style`     |
+| `warn_style`         | `"fg:#ff8800"`                | Style at warning level                        |
+| `critical_threshold` | `90.0`                        | % at which style switches to `critical_style` |
+| `critical_style`     | `"red"`                       | Style at critical level                       |
+
+```toml
+[rate_limit_5h]
+style = "cyan"
+warn_threshold = 60.0
+warn_style = "yellow"
+critical_threshold = 90.0
+critical_style = "bold red"
+
+[rate_limit_7d]
+disabled = true   # show only the 5-hour limit
 ```
 
 ### Styles
@@ -468,8 +509,8 @@ The status line adapts to your terminal width automatically:
   terminal width boundaries (in columns) required for it to appear. For example,
   `[model]` defaults to `min_term_width = 80`, so it hides on narrow terminals.
 - **Auto-sizing context bar** — when `[context_bar].width` is `0` (the
-  default), the bar width scales to one-third of the terminal width (minimum
-  40 characters).
+  default), the bar width scales to one-quarter of the terminal width (minimum
+  10 characters).
 
 This means the same config works well across different terminal sizes — from a
 narrow split pane to a full-width monitor.
