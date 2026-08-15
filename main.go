@@ -11,13 +11,14 @@ import (
 	"os"
 	"strings"
 
-	"github.com/TheoBrigitte/claude-statusline/pkg/config"
-	"github.com/TheoBrigitte/claude-statusline/pkg/format"
-	"github.com/TheoBrigitte/claude-statusline/pkg/layout"
-	"github.com/TheoBrigitte/claude-statusline/pkg/model"
-	"github.com/TheoBrigitte/claude-statusline/pkg/status"
-	"github.com/TheoBrigitte/claude-statusline/pkg/style"
-	"github.com/TheoBrigitte/claude-statusline/pkg/terminal"
+	"github.com/keyamasabaya/claude-statusline/pkg/config"
+	"github.com/keyamasabaya/claude-statusline/pkg/format"
+	"github.com/keyamasabaya/claude-statusline/pkg/layout"
+	"github.com/keyamasabaya/claude-statusline/pkg/model"
+	"github.com/keyamasabaya/claude-statusline/pkg/status"
+	"github.com/keyamasabaya/claude-statusline/pkg/style"
+	"github.com/keyamasabaya/claude-statusline/pkg/terminal"
+	"github.com/keyamasabaya/claude-statusline/pkg/width"
 )
 
 var (
@@ -118,7 +119,7 @@ func runWith(configPath, logFile string, r io.Reader, w io.Writer, termWidth int
 			}
 			parts = append(parts, &layout.Part{
 				Text: rendered,
-				Len:  displayLen(rendered, modules, strings.TrimSpace(seg)),
+				Len:  width.Cells(rendered),
 			})
 		}
 		for _, line := range layout.Lines(termWidth-cfg.Padding, cfg.Separator, parts) {
@@ -128,30 +129,24 @@ func runWith(configPath, logFile string, r io.Reader, w io.Writer, termWidth int
 	return nil
 }
 
-// moduleResult holds both the rendered (styled) and raw (unstyled) text for a module.
-type moduleResult struct {
-	rendered string
-	rawLen   int
-}
-
 // renderModules renders every module into a map keyed by $token name.
-func renderModules(cfg config.Config, in model.Input, termWidth int) map[string]moduleResult {
+func renderModules(cfg config.Config, in model.Input, termWidth int) map[string]string {
 	currentUsage := model.ParseCurrentUsage(in.ContextWindow.CurrentUsage)
 	contextPct := 0
 	if in.ContextWindow.UsedPercentage != nil {
 		contextPct = int(*in.ContextWindow.UsedPercentage)
 	}
 
-	m := map[string]moduleResult{
-		"$model":          {"", 0},
-		"$context_bar":    {"", 0},
-		"$context_tokens": {"", 0},
-		"$context_pct":    {"", 0},
-		"$cost":           {"", 0},
-		"$duration":       {"", 0},
-		"$status":         {"", 0},
-		"$rate_5h":        {"", 0},
-		"$rate_7d":        {"", 0},
+	m := map[string]string{
+		"$model":          "",
+		"$context_bar":    "",
+		"$context_tokens": "",
+		"$context_pct":    "",
+		"$cost":           "",
+		"$duration":       "",
+		"$status":         "",
+		"$rate_5h":        "",
+		"$rate_7d":        "",
 	}
 
 	// Model
@@ -159,7 +154,7 @@ func renderModules(cfg config.Config, in model.Input, termWidth int) map[string]
 		if in.Model.DisplayName != "" {
 			raw := applyFormat(cfg.Model.Format, in.Model.DisplayName, cfg.Model.Symbol)
 			s := cachedParse(cfg.Model.Style)
-			m["$model"] = moduleResult{s.Sprint(raw), len(raw)}
+			m["$model"] = s.Sprint(raw)
 		}
 	}
 
@@ -181,7 +176,7 @@ func renderModules(cfg config.Config, in model.Input, termWidth int) map[string]
 			}
 			raw := cfg.ContextBar.Symbol + strings.Repeat(fc, filled) + strings.Repeat(ec, empty)
 			s := resolveThresholdStyle(cfg.ContextBar.ThresholdConfig, float64(contextPct))
-			m["$context_bar"] = moduleResult{s.Sprint(raw), len(raw)}
+			m["$context_bar"] = s.Sprint(raw)
 		}
 	}
 
@@ -190,7 +185,7 @@ func renderModules(cfg config.Config, in model.Input, termWidth int) map[string]
 		value := format.SI(currentUsage) + "/" + format.SI(in.ContextWindow.ContextWindowSize) + " tokens"
 		raw := applyFormat(cfg.ContextTokens.Format, value, cfg.ContextTokens.Symbol)
 		s := cachedParse(cfg.ContextTokens.Style)
-		m["$context_tokens"] = moduleResult{s.Sprint(raw), len(raw)}
+		m["$context_tokens"] = s.Sprint(raw)
 	}
 
 	// Context percentage
@@ -198,7 +193,7 @@ func renderModules(cfg config.Config, in model.Input, termWidth int) map[string]
 		value := fmt.Sprintf("%d", contextPct)
 		raw := applyFormat(cfg.ContextPct.Format, value, cfg.ContextPct.Symbol)
 		s := cachedParse(cfg.ContextPct.Style)
-		m["$context_pct"] = moduleResult{s.Sprint(raw), len(raw)}
+		m["$context_pct"] = s.Sprint(raw)
 	}
 
 	// Cost
@@ -206,7 +201,7 @@ func renderModules(cfg config.Config, in model.Input, termWidth int) map[string]
 		value := format.Cost(in.Cost.TotalCostUSD)
 		raw := applyFormat(cfg.Cost.Format, value, cfg.Cost.Symbol)
 		s := resolveThresholdStyle(cfg.Cost, in.Cost.TotalCostUSD)
-		m["$cost"] = moduleResult{s.Sprint(raw), len(raw)}
+		m["$cost"] = s.Sprint(raw)
 	}
 
 	// Duration
@@ -214,7 +209,7 @@ func renderModules(cfg config.Config, in model.Input, termWidth int) map[string]
 		value := format.Duration(in.Cost.TotalDurationMS)
 		raw := applyFormat(cfg.Duration.Format, value, cfg.Duration.Symbol)
 		s := cachedParse(cfg.Duration.Style)
-		m["$duration"] = moduleResult{s.Sprint(raw), len(raw)}
+		m["$duration"] = s.Sprint(raw)
 	}
 
 	// Status
@@ -222,7 +217,7 @@ func renderModules(cfg config.Config, in model.Input, termWidth int) map[string]
 		value := status.Get()
 		raw := applyFormat(cfg.Status.Format, value, cfg.Status.Symbol)
 		s := cachedParse(cfg.Status.Style)
-		m["$status"] = moduleResult{s.Sprint(raw), len(raw)}
+		m["$status"] = s.Sprint(raw)
 	}
 
 	// Rate limit 5h
@@ -232,7 +227,7 @@ func renderModules(cfg config.Config, in model.Input, termWidth int) map[string]
 		reset := format.TimeUntil(in.RateLimits.FiveHour.ResetsAt)
 		raw := applyRateLimitFormat(cfg.RateLimit5h.Format, value, cfg.RateLimit5h.Symbol, reset)
 		s := resolveThresholdStyle(cfg.RateLimit5h, float64(pct))
-		m["$rate_5h"] = moduleResult{s.Sprint(raw), len(raw)}
+		m["$rate_5h"] = s.Sprint(raw)
 	}
 
 	// Rate limit 7d
@@ -242,7 +237,7 @@ func renderModules(cfg config.Config, in model.Input, termWidth int) map[string]
 		reset := format.TimeUntil(in.RateLimits.SevenDay.ResetsAt)
 		raw := applyRateLimitFormat(cfg.RateLimit7d.Format, value, cfg.RateLimit7d.Symbol, reset)
 		s := resolveThresholdStyle(cfg.RateLimit7d, float64(pct))
-		m["$rate_7d"] = moduleResult{s.Sprint(raw), len(raw)}
+		m["$rate_7d"] = s.Sprint(raw)
 	}
 
 	return m
@@ -302,44 +297,19 @@ func resolveThresholdStyle(cfg config.ThresholdConfig, value float64) *style.Sty
 
 // renderSegment replaces all $module tokens in a segment template with their
 // rendered values. Returns empty string if all tokens resolved to empty.
-func renderSegment(seg string, modules map[string]moduleResult) string {
+func renderSegment(seg string, modules map[string]string) string {
 	result := seg
 	hasContent := false
-	for token, mod := range modules {
+	for token, rendered := range modules {
 		if strings.Contains(result, token) {
-			if mod.rendered != "" {
+			if rendered != "" {
 				hasContent = true
 			}
-			result = strings.ReplaceAll(result, token, mod.rendered)
+			result = strings.ReplaceAll(result, token, rendered)
 		}
 	}
 	if !hasContent {
 		return ""
 	}
 	return strings.TrimSpace(result)
-}
-
-// displayLen calculates the logical display width of a rendered segment
-// by summing the raw lengths of the modules it contains plus literal text.
-func displayLen(_ string, modules map[string]moduleResult, seg string) int {
-	total := 0
-	remaining := seg
-	for remaining != "" {
-		earliest := -1
-		var earliestToken string
-		for token := range modules {
-			if idx := strings.Index(remaining, token); idx >= 0 && (earliest < 0 || idx < earliest) {
-				earliest = idx
-				earliestToken = token
-			}
-		}
-		if earliest < 0 {
-			total += len(remaining)
-			break
-		}
-		total += earliest // literal text before token
-		total += modules[earliestToken].rawLen
-		remaining = remaining[earliest+len(earliestToken):]
-	}
-	return total
 }
