@@ -8,7 +8,7 @@
 [![GitHub release](https://img.shields.io/github/release/TheoBrigitte/claude-statusline.svg?color)](https://github.com/TheoBrigitte/claude-statusline/releases)
 [![Build Status](https://github.com/TheoBrigitte/claude-statusline/actions/workflows/build.yaml/badge.svg?branch=main)](https://github.com/TheoBrigitte/claude-statusline/actions/workflows/build.yaml)
 [![GitHub downloads](https://img.shields.io/github/downloads/TheoBrigitte/claude-statusline/total)](https://github.com/TheoBrigitte/claude-statusline/releases)
-[![Go Reference](https://pkg.go.dev/badge/github.com/TheoBrigitte/claude-statusline.svg)](https://pkg.go.dev/github.com/TheoBrigitte/claude-statusline)
+  [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/TheoBrigitte/claude-statusline/badge)](https://scorecard.dev/viewer/?uri=github.com/TheoBrigitte/claude-statusline//pkg.go.dev/badge/github.com/TheoBrigitte/claude-statusline.svg)](https://pkg.go.dev/github.com/TheoBrigitte/claude-statusline)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/TheoBrigitte/claude-statusline/blob/main/LICENSE)
 
 <p align="center">
