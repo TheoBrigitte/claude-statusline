@@ -210,3 +210,111 @@ func TestRenderedWidthIsIndependentOfStyling(t *testing.T) {
 		}
 	}
 }
+
+// TestContextBarClampsPercentage guards against a panic: a percentage outside
+// 0-100 used to ask strings.Repeat for a negative count, which crashed the
+// whole status line and left the prompt with no output at all.
+func TestContextBarClampsPercentage(t *testing.T) {
+	for _, pct := range []string{"150", "-10", "0", "100", "1e9"} {
+		t.Run(pct, func(t *testing.T) {
+			in := `{"model":{"display_name":"Opus 5"},` +
+				`"context_window":{"context_window_size":200000,"used_percentage":` + pct + `}}`
+
+			var buf bytes.Buffer
+			cfgPath := writeConfig(t, wideGlyphConfig(""))
+			if err := runWith(cfgPath, "", strings.NewReader(in), &buf, 120); err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if buf.Len() == 0 {
+				t.Error("rendered nothing")
+			}
+		})
+	}
+}
+
+func TestApplyFormat(t *testing.T) {
+	tests := []struct {
+		name          string
+		format        string
+		value, symbol string
+		want          string
+	}{
+		{"empty format prepends symbol", "", "42", "$ ", "$ 42"},
+		{"single placeholders", "{symbol}{value}", "42", "$ ", "$ 42"},
+		{"literal text preserved", "[{value}]", "42", "", "[42]"},
+		// Every occurrence is substituted, not just the first.
+		{"repeated symbol", "{symbol}{value} {symbol}", "42", "@", "@42 @"},
+		{"repeated value", "{value}/{value}", "42", "", "42/42"},
+		{"no placeholder", "static", "42", "@", "static"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := applyFormat(tt.format, tt.value, tt.symbol); got != tt.want {
+				t.Errorf("applyFormat(%q, %q, %q) = %q, want %q", tt.format, tt.value, tt.symbol, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestApplyRateLimitFormat(t *testing.T) {
+	tests := []struct {
+		name                 string
+		format               string
+		value, symbol, reset string
+		want                 string
+	}{
+		{"with reset", "{symbol}{value}% ~{reset}", "42.50", "5h: ", "2h30m", "5h: 42.50% ~2h30m"},
+		{"without reset drops dangling prefix", "{symbol}{value}% ~{reset}", "42.50", "5h: ", "", "5h: 42.50%"},
+		{"repeated reset", "{value} {reset} {reset}", "42", "", "1h", "42 1h 1h"},
+		{"repeated reset when empty", "{value} ~{reset} ~{reset}", "42", "", "", "42"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := applyRateLimitFormat(tt.format, tt.value, tt.symbol, tt.reset)
+			if got != tt.want {
+				t.Errorf("got %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+// TestHiddenModuleLeavesNoGap covers a module hidden by min_term_width: its
+// token renders empty and used to leave the spaces around it behind as a
+// visible double space.
+func TestHiddenModuleLeavesNoGap(t *testing.T) {
+	cfg := `
+lines = ["$context_bar $context_tokens $context_pct"]
+
+[status]
+disabled = true
+
+[context_bar]
+width = 6
+min_term_width = 0
+
+[context_tokens]
+min_term_width = 999
+
+[context_pct]
+min_term_width = 0
+`
+	lines := render(t, writeConfig(t, cfg), 120)
+	for _, line := range lines {
+		if strings.Contains(line, "  ") {
+			t.Errorf("hidden module left a double space: %q", line)
+		}
+	}
+}
+
+// TestDebugWarningStaysOffStdout checks diagnostics never land in the status
+// line itself, which is what Claude Code renders verbatim.
+func TestDebugWarningStaysOffStdout(t *testing.T) {
+	var buf bytes.Buffer
+	cfgPath := writeConfig(t, wideGlyphConfig(""))
+	if err := runWith(cfgPath, "", strings.NewReader(testInputJSON), &buf, 120); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(buf.String(), "warning:") {
+		t.Errorf("stdout carries a warning: %q", buf.String())
+	}
+}

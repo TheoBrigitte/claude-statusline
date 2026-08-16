@@ -183,3 +183,46 @@ func BenchmarkSprint(b *testing.B) {
 		s.Sprint("[Opus 4.6 (1M context)]")
 	}
 }
+
+// TestParseQualifiedNamedColors covers the fg:/bg: prefixes applied to named
+// colors. The fg: prefix used to accept hex values only, so "fg:red" was
+// silently dropped while "bg:red" worked.
+func TestParseQualifiedNamedColors(t *testing.T) {
+	tests := []struct {
+		in   string
+		want string
+	}{
+		{"fg:red", "\033[31m"},
+		{"bg:red", "\033[41m"},
+		{"fg:bright_cyan", "\033[96m"},
+		{"bg:bright_cyan", "\033[106m"},
+		{"fg:magenta", "\033[35m"},
+		{"bold fg:green", "\033[1;32m"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.in, func(t *testing.T) {
+			s := Parse(tt.in)
+			if s == nil {
+				t.Fatalf("Parse(%q) = nil, want a style", tt.in)
+			}
+			if got := s.Sprint("x"); got != tt.want+"x\033[0m" {
+				t.Errorf("Parse(%q).Sprint(\"x\") = %q, want %q", tt.in, got, tt.want+"x\033[0m")
+			}
+		})
+	}
+}
+
+// TestParseUnqualifiedMatchesQualified checks "red" and "fg:red" agree, since
+// an unprefixed color name is a foreground color.
+func TestParseUnqualifiedMatchesQualified(t *testing.T) {
+	for _, name := range []string{"red", "green", "bright_blue", "white"} {
+		bare, qualified := Parse(name), Parse("fg:"+name)
+		if qualified == nil {
+			t.Errorf("Parse(%q) = nil", "fg:"+name)
+			continue
+		}
+		if bare.Sprint("x") != qualified.Sprint("x") {
+			t.Errorf("%q and %q disagree: %q vs %q", name, "fg:"+name, bare.Sprint("x"), qualified.Sprint("x"))
+		}
+	}
+}

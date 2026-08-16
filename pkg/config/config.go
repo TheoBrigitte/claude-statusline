@@ -54,7 +54,7 @@ type ThresholdConfig struct {
 // ContextBarCfg adds bar-specific fields to ThresholdConfig.
 type ContextBarCfg struct {
 	ThresholdConfig
-	Width     int    `toml:"width"`      // 0 = auto (termWidth/3, min 40)
+	Width     int    `toml:"width"`      // 0 = auto (termWidth/4, min 10)
 	FillChar  string `toml:"fill_char"`  // default "#"
 	EmptyChar string `toml:"empty_char"` // default "-"
 }

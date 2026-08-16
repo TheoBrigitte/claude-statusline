@@ -59,7 +59,7 @@ func run(configPath, logFile string) error {
 	if err != nil {
 		termWidth = terminal.DefaultWidth
 		if debug {
-			fmt.Fprintf(os.Stdout, "warning: failed to get terminal width, defaulting to %d: %v\n", termWidth, err) //nolint:errcheck
+			fmt.Fprintf(os.Stderr, "warning: failed to get terminal width, defaulting to %d: %v\n", termWidth, err) //nolint:errcheck
 		}
 	}
 	return runWith(configPath, logFile, os.Stdin, os.Stdout, termWidth)
@@ -165,7 +165,10 @@ func renderModules(cfg config.Config, in model.Input, termWidth int) map[string]
 			barWidth = max(termWidth/4, 10)
 		}
 		if barWidth > 0 {
-			filled := contextPct * barWidth / 100
+			// The percentage comes from the session JSON, so clamp it: an
+			// out-of-range value would ask strings.Repeat for a negative
+			// count and take the whole status line down with a panic.
+			filled := min(max(contextPct*barWidth/100, 0), barWidth)
 			empty := barWidth - filled
 			fc, ec := cfg.ContextBar.FillChar, cfg.ContextBar.EmptyChar
 			if fc == "" {
@@ -247,16 +250,20 @@ func shouldRenderModule(cfg config.ModuleConfig, termWidth int) bool {
 	return !cfg.Disabled && (cfg.MinTermWidth == 0 || termWidth >= cfg.MinTermWidth) && (cfg.MaxTermWidth == 0 || termWidth <= cfg.MaxTermWidth)
 }
 
-// applyFormat applies a format string. Supports {value} and {symbol} placeholders.
+// applyFormat applies a format string. Supports {value} and {symbol}
+// placeholders, each substituted at every occurrence.
 // If format is empty, returns symbol + value.
 func applyFormat(format, value, symbol string) string {
 	if format == "" {
 		return symbol + value
 	}
-	s := strings.Replace(format, "{value}", value, 1)
-	s = strings.Replace(s, "{symbol}", symbol, 1)
-	return s
+	// {value} last: it carries the most dynamic text, so substituting it at
+	// the end means its content is never rescanned for another placeholder.
+	s := strings.ReplaceAll(format, "{symbol}", symbol)
+	return strings.ReplaceAll(s, "{value}", value)
 }
+
+const resetToken = "{reset}"
 
 // applyRateLimitFormat extends applyFormat with a {reset} placeholder for countdown display.
 // If reset is empty (timestamp is zero or in the past), any text between the last
@@ -264,18 +271,21 @@ func applyFormat(format, value, symbol string) string {
 func applyRateLimitFormat(f, value, symbol, reset string) string {
 	s := applyFormat(f, value, symbol)
 	if reset != "" {
-		s = strings.Replace(s, "{reset}", reset, 1)
-	} else {
-		// Remove {reset} and any preceding non-space characters (e.g. "~")
-		// that only make sense when a reset value is present.
-		if idx := strings.Index(s, "{reset}"); idx >= 0 {
-			// Walk back over non-space chars that prefix {reset}
-			start := idx
-			for start > 0 && s[start-1] != ' ' {
-				start--
-			}
-			s = s[:start] + s[idx+len("{reset}"):]
+		return strings.TrimSpace(strings.ReplaceAll(s, resetToken, reset))
+	}
+
+	// Remove every {reset} and the non-space characters preceding it (e.g.
+	// "~"), which only make sense when a reset value is present.
+	for {
+		idx := strings.Index(s, resetToken)
+		if idx < 0 {
+			break
 		}
+		start := idx
+		for start > 0 && s[start-1] != ' ' {
+			start--
+		}
+		s = s[:start] + s[idx+len(resetToken):]
 	}
 	return strings.TrimSpace(s)
 }
@@ -299,10 +309,12 @@ func resolveThresholdStyle(cfg config.ThresholdConfig, value float64) *style.Sty
 // rendered values. Returns empty string if all tokens resolved to empty.
 func renderSegment(seg string, modules map[string]string) string {
 	result := seg
-	hasContent := false
+	hasContent, hasGap := false, false
 	for token, rendered := range modules {
 		if strings.Contains(result, token) {
-			if rendered != "" {
+			if rendered == "" {
+				hasGap = true
+			} else {
 				hasContent = true
 			}
 			result = strings.ReplaceAll(result, token, rendered)
@@ -311,5 +323,26 @@ func renderSegment(seg string, modules map[string]string) string {
 	if !hasContent {
 		return ""
 	}
+	if hasGap {
+		result = collapseSpaces(result)
+	}
 	return strings.TrimSpace(result)
+}
+
+// collapseSpaces squeezes runs of spaces down to one. A module hidden by
+// min_term_width renders as an empty string and would otherwise leave the
+// spaces that separated it from its neighbours as a visible gap.
+func collapseSpaces(s string) string {
+	var b strings.Builder
+	b.Grow(len(s))
+	prevSpace := false
+	for i := 0; i < len(s); i++ {
+		// Byte-wise is safe: 0x20 never occurs inside a UTF-8 sequence.
+		if s[i] == ' ' && prevSpace {
+			continue
+		}
+		prevSpace = s[i] == ' '
+		b.WriteByte(s[i])
+	}
+	return b.String()
 }
