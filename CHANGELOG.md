@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- Increase status request timeout to 30 seconds
+
 ## [0.2.0] - 2026-06-23
 
 ### Added
