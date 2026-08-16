@@ -47,6 +47,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Layout wrapped content measuring exactly the available width
 - `terminal.Width` did not fall back to `COLUMNS` when `/dev/tty` opened but
   reported no size, and accepted a non-positive width
+- Build workflow filtered branches on `'*'`, which does not match `/`, so no
+  build ever ran for a branch named like `claude/foo` or `fix/bar`
 
 ## [0.2.0] - 2026-06-23
 

@@ -2,8 +2,10 @@ name: build
 
 on:
   push:
+    # '**' rather than '*': a single star does not match '/', so branches
+    # named like claude/foo or fix/bar never triggered a build.
     branches:
-    - '*'
+    - '**'
     tags-ignore:
     - v*
 
