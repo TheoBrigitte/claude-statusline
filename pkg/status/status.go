@@ -74,7 +74,7 @@ func Get() string {
 		}
 	}
 
-	client := &http.Client{Timeout: 5 * time.Second}
+	client := &http.Client{Timeout: 30 * time.Second}
 	status = Fetch(client, apiURL)
 	return status
 }
