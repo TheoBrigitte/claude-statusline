@@ -5,11 +5,11 @@
 🚀 A fast and configurable [status line](https://code.claude.com/docs/en/statusline) for [Claude Code](https://claude.ai/code) sessions.
 
 
-[![GitHub release](https://img.shields.io/github/release/TheoBrigitte/claude-statusline.svg?color)](https://github.com/TheoBrigitte/claude-statusline/releases)
-[![Build Status](https://github.com/TheoBrigitte/claude-statusline/actions/workflows/build.yaml/badge.svg?branch=main)](https://github.com/TheoBrigitte/claude-statusline/actions/workflows/build.yaml)
-[![GitHub downloads](https://img.shields.io/github/downloads/TheoBrigitte/claude-statusline/total)](https://github.com/TheoBrigitte/claude-statusline/releases)
-[![Go Reference](https://pkg.go.dev/badge/github.com/TheoBrigitte/claude-statusline.svg)](https://pkg.go.dev/github.com/TheoBrigitte/claude-statusline)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/TheoBrigitte/claude-statusline/blob/main/LICENSE)
+[![GitHub release](https://img.shields.io/github/release/keyamasabaya/claude-statusline.svg?color)](https://github.com/keyamasabaya/claude-statusline/releases)
+[![Build Status](https://github.com/keyamasabaya/claude-statusline/actions/workflows/build.yaml/badge.svg?branch=main)](https://github.com/keyamasabaya/claude-statusline/actions/workflows/build.yaml)
+[![GitHub downloads](https://img.shields.io/github/downloads/keyamasabaya/claude-statusline/total)](https://github.com/keyamasabaya/claude-statusline/releases)
+[![Go Reference](https://pkg.go.dev/badge/github.com/keyamasabaya/claude-statusline.svg)](https://pkg.go.dev/github.com/keyamasabaya/claude-statusline)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/keyamasabaya/claude-statusline/blob/main/LICENSE)
 
 <p align="center">
     <img src="assets/claude-statusline.png" alt="claude-statusline screenshot" height="800px">
@@ -43,6 +43,8 @@
 
 📏 **Responsive layout**:
 - Auto-wrapping: segments overflow to new lines when exceeding terminal width
+- Widths measured in terminal cells, so Nerd Font glyphs, emoji and block
+  characters take exactly the room they occupy on screen
 - Per-module `min_term_width` and `max_term_width` to hide based on terminals width
 - Terminal width detection via `/dev/tty` (works with piped stdin)
 
@@ -57,7 +59,7 @@
 
 ```sh
 OS=linux; ARCH=amd64
-curl --create-dirs -sSLo ~/.local/bin/claude-statusline "https://github.com/TheoBrigitte/claude-statusline/releases/latest/download/claude-statusline.$OS-$ARCH"
+curl --create-dirs -sSLo ~/.local/bin/claude-statusline "https://github.com/keyamasabaya/claude-statusline/releases/latest/download/claude-statusline.$OS-$ARCH"
 chmod +x ~/.local/bin/claude-statusline
 ```
 
@@ -70,7 +72,7 @@ This downloads the binary to `~/.local/bin/claude-statusline`.
 Requires the Golang toolchain.
 
 ```sh
-go install github.com/TheoBrigitte/claude-statusline@latest
+go install github.com/keyamasabaya/claude-statusline@latest
 ```
 
 After installing the binary, configure it into Claude Code in `~/.claude/settings.json`:
@@ -505,6 +507,10 @@ The status line adapts to your terminal width automatically:
 
 - **Auto-wrapping** — segments within a line wrap to the next line when they
   exceed the terminal width, using the `separator` as the breakpoint.
+- **Cell-accurate measurement** — segment widths are counted in terminal cells,
+  not bytes. ANSI colour codes are skipped, a Nerd Font glyph or a `█` counts
+  as one column, and an emoji counts as two. Icon-heavy configs therefore wrap
+  where they actually overflow rather than dozens of columns early.
 - **`min_term_width` and `max_term_width` per module** — each module can set
   terminal width boundaries (in columns) required for it to appear. For example,
   `[model]` defaults to `min_term_width = 80`, so it hides on narrow terminals.
@@ -565,11 +571,15 @@ make install        # Build and install to ~/.local/bin
 
 ## 🙏 Credits
 
+- [TheoBrigitte/claude-statusline](https://github.com/TheoBrigitte/claude-statusline) — the upstream project this fork is based on, by Théo Brigitte
 - [Claude Code](https://claude.ai/code) for the session JSON API and status line integration
 - [Starship](https://starship.rs) for the style syntax and rendering inspiration
 - [Nerd Fonts](https://www.nerdfonts.com) for the extensive icon library
 - [CShip](https://github.com/stephenleo/cship) for the inspiration on configuration format
+- [rivo/uniseg](https://github.com/rivo/uniseg) for Unicode grapheme cluster and display width handling
 
 ## 📄 License
 
-MIT
+MIT — see [LICENSE](LICENSE). This is a fork of
+[TheoBrigitte/claude-statusline](https://github.com/TheoBrigitte/claude-statusline);
+the original copyright notice is retained.

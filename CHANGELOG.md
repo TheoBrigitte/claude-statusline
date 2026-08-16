@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- `pkg/width` — measures a rendered string in terminal cells: ANSI escape
+  sequences are skipped and text is counted per grapheme cluster
+
+### Changed
+
+- Fork of [TheoBrigitte/claude-statusline](https://github.com/TheoBrigitte/claude-statusline):
+  module path is now `github.com/keyamasabaya/claude-statusline`, so
+  `go install github.com/keyamasabaya/claude-statusline@latest` resolves
+
+### Fixed
+
+- Layout measured segment widths in bytes instead of terminal cells, so any
+  Nerd Font glyph, emoji or block character inflated the measurement and
+  wrapped the status line early. The documented Nerd Font config was split
+  across three lines on an 80 column terminal while occupying 67 cells
+
 ## [0.2.0] - 2026-06-23
 
 ### Added
@@ -35,6 +53,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Responsive layout with auto-wrapping and terminal width detection
 - Performance optimizations for fast rendering
 
-[Unreleased]: https://github.com/TheoBrigitte/claude-statusline/compare/v0.2.0...HEAD
-[0.2.0]: https://github.com/TheoBrigitte/claude-statusline/compare/v0.1.0...v0.2.0
-[0.1.0]: https://github.com/TheoBrigitte/claude-statusline/releases/tag/v0.1.0
+[Unreleased]: https://github.com/keyamasabaya/claude-statusline/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/keyamasabaya/claude-statusline/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/keyamasabaya/claude-statusline/releases/tag/v0.1.0

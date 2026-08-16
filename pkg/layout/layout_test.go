@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/TheoBrigitte/claude-statusline/pkg/style"
+	"github.com/keyamasabaya/claude-statusline/pkg/style"
 )
 
 func TestNewPart(t *testing.T) {

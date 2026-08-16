@@ -1,14 +1,18 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"io"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
-	"github.com/TheoBrigitte/claude-statusline/pkg/config"
-	"github.com/TheoBrigitte/claude-statusline/pkg/layout"
-	"github.com/TheoBrigitte/claude-statusline/pkg/model"
+	"github.com/keyamasabaya/claude-statusline/pkg/config"
+	"github.com/keyamasabaya/claude-statusline/pkg/layout"
+	"github.com/keyamasabaya/claude-statusline/pkg/model"
+	"github.com/keyamasabaya/claude-statusline/pkg/width"
 )
 
 const testInputJSON = `{
@@ -75,7 +79,7 @@ func BenchmarkRenderSegment(b *testing.B) {
 	}
 }
 
-func BenchmarkDisplayLen(b *testing.B) {
+func BenchmarkMeasureSegment(b *testing.B) {
 	cfg := testConfig()
 	in := testInput(b)
 	modules := renderModules(cfg, in, 120)
@@ -83,7 +87,7 @@ func BenchmarkDisplayLen(b *testing.B) {
 	rendered := renderSegment(seg, modules)
 	b.ResetTimer()
 	for b.Loop() {
-		displayLen(rendered, modules, seg)
+		width.Cells(rendered)
 	}
 }
 
@@ -105,10 +109,104 @@ func BenchmarkEndToEnd(b *testing.B) {
 				}
 				parts = append(parts, &layout.Part{
 					Text: rendered,
-					Len:  displayLen(rendered, modules, seg),
+					Len:  width.Cells(rendered),
 				})
 			}
 			layout.Lines(termWidth, cfg.Separator, parts)
+		}
+	}
+}
+
+// Tests
+
+// wideGlyphConfig mirrors the Nerd Font setup documented in the README: block
+// characters for the context bar and a glyph symbol on the duration module.
+// Every one of those is a single cell on screen but three bytes in memory.
+// modelStyle is injected so the same layout can be rendered with and without
+// ANSI colours.
+func wideGlyphConfig(modelStyle string) string {
+	return `
+lines = ["$model | $context_bar $context_pct | $cost | $duration"]
+
+[status]
+disabled = true
+
+[model]
+min_term_width = 0
+style = "` + modelStyle + `"
+
+[duration]
+symbol = "\uf017 "
+
+[context_bar]
+width = 20
+fill_char = "\u2588"
+empty_char = "\u2591"
+min_term_width = 0
+`
+}
+
+func writeConfig(t *testing.T, contents string) string {
+	t.Helper()
+	path := filepath.Join(t.TempDir(), "claude-statusline.toml")
+	if err := os.WriteFile(path, []byte(contents), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	return path
+}
+
+func render(t *testing.T, configPath string, termWidth int) []string {
+	t.Helper()
+	var buf bytes.Buffer
+	if err := runWith(configPath, "", strings.NewReader(testInputJSON), &buf, termWidth); err != nil {
+		t.Fatal(err)
+	}
+	return strings.Split(strings.TrimRight(buf.String(), "\n"), "\n")
+}
+
+// TestRunWithWrapsOnCellsNotBytes is the regression guard for the layout being
+// measured in terminal cells. The rendered line is 67 cells wide, so it fits an
+// 80 column terminal minus the default padding of 5; measured in bytes it is
+// 109 long and used to be split across two lines.
+func TestRunWithWrapsOnCellsNotBytes(t *testing.T) {
+	cfgPath := writeConfig(t, wideGlyphConfig(""))
+
+	const termWidth = 80
+	lines := render(t, cfgPath, termWidth)
+
+	if len(lines) != 1 {
+		t.Errorf("got %d lines at width %d, want 1:\n%s", len(lines), termWidth, strings.Join(lines, "\n"))
+	}
+	for _, line := range lines {
+		if cells := width.Cells(line); cells > termWidth {
+			t.Errorf("line is %d cells wide, exceeds terminal width %d: %q", cells, termWidth, line)
+		}
+	}
+}
+
+// TestRunWithStillWrapsWhenTooNarrow checks the fix did not simply disable
+// wrapping: a terminal too narrow for the same content must still split it.
+func TestRunWithStillWrapsWhenTooNarrow(t *testing.T) {
+	cfgPath := writeConfig(t, wideGlyphConfig(""))
+
+	lines := render(t, cfgPath, 30)
+	if len(lines) < 2 {
+		t.Errorf("got %d lines at width 30, want at least 2:\n%s", len(lines), strings.Join(lines, "\n"))
+	}
+}
+
+// TestRenderedWidthIsIndependentOfStyling checks that turning colours on does
+// not change how much room the status line is believed to need.
+func TestRenderedWidthIsIndependentOfStyling(t *testing.T) {
+	plain := render(t, writeConfig(t, wideGlyphConfig("")), 80)
+	styled := render(t, writeConfig(t, wideGlyphConfig("bold cyan")), 80)
+
+	if len(plain) != len(styled) {
+		t.Fatalf("styling changed the line count: %d vs %d", len(plain), len(styled))
+	}
+	for i := range plain {
+		if got, want := width.Cells(styled[i]), width.Cells(plain[i]); got != want {
+			t.Errorf("line %d: styled width %d, plain width %d", i, got, want)
 		}
 	}
 }

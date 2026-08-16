@@ -1,10 +1,11 @@
-module github.com/TheoBrigitte/claude-statusline
+module github.com/keyamasabaya/claude-statusline
 
 go 1.25.6
 
 require (
 	github.com/BurntSushi/toml v1.6.0
 	github.com/go-playground/colors v1.3.1
+	github.com/rivo/uniseg v0.4.7
 	golang.org/x/term v0.40.0
 )
 
