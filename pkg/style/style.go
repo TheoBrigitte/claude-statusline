@@ -6,6 +6,7 @@
 //	"red"                         – named foreground color
 //	"bold green"                  – modifier + named color
 //	"fg:#c792ea"                  – 24-bit hex foreground
+//	"fg:cyan" / "bg:cyan"         – explicitly qualified named color
 //	"bold fg:#ff5370 bg:#1a1a2e"  – modifier + hex fg + hex bg
 //	"bright_red"                  – bright/hi-intensity named color
 package style
@@ -56,6 +57,8 @@ func Parse(s string) *Style {
 			if val, ok := strings.CutPrefix(p, "fg:"); ok {
 				if r, g, b, ok := parseHex(val); ok {
 					codes = append(codes, "38;2;"+strconv.Itoa(int(r))+";"+strconv.Itoa(int(g))+";"+strconv.Itoa(int(b)))
+				} else if code, ok := namedFg[val]; ok {
+					codes = append(codes, strconv.Itoa(code))
 				}
 			} else if val, ok := strings.CutPrefix(p, "bg:"); ok {
 				if r, g, b, ok := parseHex(val); ok {

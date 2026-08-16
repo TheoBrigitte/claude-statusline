@@ -59,7 +59,9 @@ func Lines(termPaddedWidth int, separator string, parts []*Part) []string {
 			continue
 		}
 		candidateWidth := lineWidth + width.Cells(separator) + p.Length()
-		if len(lines) == 0 || candidateWidth >= termPaddedWidth {
+		// Strictly greater: content measuring exactly termPaddedWidth cells
+		// still fits on a line that wide.
+		if len(lines) == 0 || candidateWidth > termPaddedWidth {
 			lines = append(lines, p.Text)
 			lineWidth = p.Length()
 		} else {

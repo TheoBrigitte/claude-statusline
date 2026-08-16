@@ -4,7 +4,6 @@ package status
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -19,6 +18,7 @@ const (
 
 	apiURL        = "https://status.claude.com/api/v2/status.json"
 	cacheDuration = 10 * time.Minute
+	httpTimeout   = 5 * time.Second
 )
 
 var cacheRelPath = filepath.Join(".local", "state", "claude-status", "api_status.txt")
@@ -31,67 +31,98 @@ type apiStatusResponse struct {
 
 // Get returns the Claude API operational status as an emoji indicator.
 //
-// It uses a file-based cache at ~/.local/state/claude-status/api_status.txt
-// to avoid hitting the status API on every invocation. If the cache file
-// exists and was modified less than 10 minutes ago, the cached value is
-// returned directly. Otherwise, it fetches a fresh status from the API,
-// writes it to the cache file for subsequent calls, and returns it.
+// It uses a file-based cache at ~/.local/state/claude-status/api_status.txt to
+// avoid hitting the status API on every invocation: a cache file written less
+// than 10 minutes ago is returned as-is. Otherwise the status is fetched from
+// the API and written back to the cache.
 //
-// Any filesystem errors are silently ignored — the function falls back
-// to a live API fetch if the cache is unavailable.
+// Failures are cached too. The status line runs on every prompt render, so an
+// unreachable API must not cost an HTTP timeout each time; the indicator
+// recovers on the next cache expiry.
+//
+// Filesystem errors are silently ignored — without a usable cache the function
+// still returns a live status.
 func Get() string {
-	var status string
-
-	// Try to read from the file-based cache first.
-	if home, err := os.UserHomeDir(); err == nil {
-		statusFileFullPath := filepath.Join(home, cacheRelPath)
-		if err := os.MkdirAll(filepath.Dir(statusFileFullPath), 0o755); err == nil { // nolint:gosec // G301: cache directory, world-readable is fine
-			statusFile, err := os.OpenFile(statusFileFullPath, os.O_RDWR|os.O_CREATE, 0o644) //nolint:gosec // G302: cache file, world-readable is fine
-			if err == nil {
-				if info, err := statusFile.Stat(); err == nil {
-					if time.Since(info.ModTime()) < cacheDuration {
-						// Cache is fresh — return it without hitting the API.
-						if cached, err := io.ReadAll(statusFile); err == nil {
-							status := strings.TrimSpace(string(cached))
-							if status != "" {
-								return status
-							}
-						}
-					} else {
-						// Cache is stale — truncate and schedule a write-back
-						// after the live fetch completes via deferred closure.
-						if err = statusFile.Truncate(0); err == nil {
-							if _, err = statusFile.Seek(0, 0); err == nil {
-								defer statusFile.Close() //nolint:errcheck
-								defer func() {
-									statusFile.WriteString(status) //nolint:errcheck,gosec
-								}()
-							}
-						}
-					}
-				}
-			}
+	path, pathErr := cachePath()
+	if pathErr == nil {
+		if cached, ok := readCache(path); ok {
+			return cached
 		}
 	}
 
-	client := &http.Client{Timeout: 5 * time.Second}
-	status = Fetch(client, apiURL)
+	status, _ := Fetch(&http.Client{Timeout: httpTimeout}, apiURL)
+
+	if pathErr == nil {
+		writeCache(path, status)
+	}
 	return status
 }
 
-// Fetch performs the HTTP request and interprets the response as a status indicator.
-func Fetch(client *http.Client, url string) string {
+// cachePath returns the cache file path, creating its parent directory.
+func cachePath() (string, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+	path := filepath.Join(home, cacheRelPath)
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil { //nolint:gosec // G301: cache directory, world-readable is fine
+		return "", err
+	}
+	return path, nil
+}
+
+// readCache returns the cached status, and whether it is usable: the file has
+// to exist, be younger than cacheDuration, and hold a non-empty value.
+//
+// The emptiness check matters on the very first run. Creating the file and
+// treating it as a hit because its timestamp is recent would serve an empty
+// status for a full cache duration, turning every render into a live fetch.
+func readCache(path string) (string, bool) {
+	info, err := os.Stat(path)
+	if err != nil || time.Since(info.ModTime()) >= cacheDuration {
+		return "", false
+	}
+	contents, err := os.ReadFile(path) //nolint:gosec // G304: path is derived from the user's home directory
+	if err != nil {
+		return "", false
+	}
+	status := strings.TrimSpace(string(contents))
+	return status, status != ""
+}
+
+// writeCache stores status for subsequent invocations. Errors are ignored: a
+// cache that cannot be written only costs an extra fetch next time.
+func writeCache(path, status string) {
+	_ = os.WriteFile(path, []byte(status), 0o644) //nolint:gosec // G306: cache file, world-readable is fine
+}
+
+// Fetch performs the HTTP request and interprets the response as a status
+// indicator.
+//
+// The indicator is always short enough to sit in a status line; when the
+// request or the response is unusable it is StatusERR and the detail is
+// carried by the returned error rather than rendered on screen.
+func Fetch(client *http.Client, url string) (string, error) {
 	resp, err := client.Get(url)
 	if err != nil {
-		return StatusERR + fmt.Sprintf("request: %v", err.Error())
+		return StatusERR, fmt.Errorf("request: %w", err)
 	}
 	defer resp.Body.Close() //nolint:errcheck
+
+	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
+		return StatusERR, fmt.Errorf("response: unexpected status %s", resp.Status)
+	}
+
 	var r apiStatusResponse
 	if err := json.NewDecoder(resp.Body).Decode(&r); err != nil {
-		return StatusERR + fmt.Sprintf("reponse: %v", err.Error())
+		return StatusERR, fmt.Errorf("response: %w", err)
 	}
+	if r.Status.Description == "" {
+		return StatusERR, fmt.Errorf("response: missing status description")
+	}
+
 	if strings.Contains(strings.ToLower(r.Status.Description), "operational") {
-		return StatusOK
+		return StatusOK, nil
 	}
-	return StatusWARN + " degraded"
+	return StatusWARN + " degraded", nil
 }

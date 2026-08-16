@@ -313,7 +313,8 @@ separated by spaces:
 **Modifiers:** `bold`, `italic`, `underline`, `dimmed`
 
 **Named foreground colors:** `black`, `red`, `green`, `yellow`, `blue`, `purple`,
-`cyan`, `white` — and their `bright_*` variants (`bright_red`, `bright_cyan`, etc.)
+`cyan`, `white` — and their `bright_*` variants (`bright_red`, `bright_cyan`, etc.),
+optionally qualified as `fg:red`
 
 **Hex foreground:** `fg:#RRGGBB`, `fg:#RGB`, or bare `#RRGGBB` / `#RGB`
 
@@ -328,6 +329,7 @@ Examples:
 "fg:#c792ea"
 "bold fg:#ff5370 bg:#1a1a2e"
 "bright_cyan"
+"fg:cyan bg:bright_black"
 "dim italic"
 ```
 
