@@ -25,6 +25,10 @@ YELLOW := \033[33m
 RED := \033[31m
 RESET := \033[0m
 
+.PHONY: setup
+setup: ## Setup the development environment
+	pre-commit install
+
 ##@ Building
 
 GO_BIN := $(BUILD_DIR)/$(PROJECT_NAME).$(GOOS)-$(GOARCH)$(EXT)
