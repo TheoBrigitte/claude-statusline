@@ -58,7 +58,7 @@ func BenchmarkRenderModules(b *testing.B) {
 	in := testInput(b)
 	b.ResetTimer()
 	for b.Loop() {
-		renderModules(cfg, in, 120)
+		renderModules(&cfg, &in, 120)
 	}
 }
 
@@ -71,7 +71,7 @@ func BenchmarkApplyFormat(b *testing.B) {
 func BenchmarkRenderSegment(b *testing.B) {
 	cfg := testConfig()
 	in := testInput(b)
-	modules := renderModules(cfg, in, 120)
+	modules := renderModules(&cfg, &in, 120)
 	seg := "$model $context_bar $context_tokens $context_pct"
 	b.ResetTimer()
 	for b.Loop() {
@@ -82,7 +82,7 @@ func BenchmarkRenderSegment(b *testing.B) {
 func BenchmarkMeasureSegment(b *testing.B) {
 	cfg := testConfig()
 	in := testInput(b)
-	modules := renderModules(cfg, in, 120)
+	modules := renderModules(&cfg, &in, 120)
 	seg := "$model $context_bar $context_tokens $context_pct"
 	rendered := renderSegment(seg, modules)
 	b.ResetTimer()
@@ -97,7 +97,7 @@ func BenchmarkEndToEnd(b *testing.B) {
 	termWidth := 120 - cfg.Padding
 	b.ResetTimer()
 	for b.Loop() {
-		modules := renderModules(cfg, in, termWidth)
+		modules := renderModules(&cfg, &in, termWidth)
 		for _, lineTemplate := range cfg.Lines {
 			segments := strings.Split(lineTemplate, cfg.Separator)
 			var parts []*layout.Part
@@ -316,5 +316,155 @@ func TestDebugWarningStaysOffStdout(t *testing.T) {
 	}
 	if strings.Contains(buf.String(), "warning:") {
 		t.Errorf("stdout carries a warning: %q", buf.String())
+	}
+}
+
+// richInputJSON exercises the fields the default line ignores.
+const richInputJSON = `{
+	"cwd": "/home/keya/projects/dejavu",
+	"model": {"display_name": "Opus 5"},
+	"workspace": {"current_dir": "/home/keya/projects/dejavu"},
+	"version": "2.0.14",
+	"output_style": {"name": "Explanatory"},
+	"cost": {"total_cost_usd": 1.247, "total_duration_ms": 245000, "total_api_duration_ms": 98000,
+	         "total_lines_added": 342, "total_lines_removed": 117},
+	"context_window": {"context_window_size": 200000, "total_input_tokens": 218000,
+	                   "total_output_tokens": 34500, "used_percentage": 13}
+}`
+
+// stripANSI removes escape sequences so a test can assert on the text a
+// module produces without pinning the colors it is styled with.
+func stripANSI(s string) string {
+	var b strings.Builder
+	for i := 0; i < len(s); i++ {
+		if s[i] != '\x1b' {
+			b.WriteByte(s[i])
+			continue
+		}
+		for i++; i < len(s); i++ {
+			if s[i] >= '@' && s[i] <= '~' && s[i] != '[' {
+				break
+			}
+		}
+	}
+	return b.String()
+}
+
+func renderToken(t *testing.T, token, inputJSON string) string {
+	t.Helper()
+	cfg := `lines = ["` + token + `"]` + "\n[status]\ndisabled = true\n"
+	var buf bytes.Buffer
+	if err := runWith(writeConfig(t, cfg), "", strings.NewReader(inputJSON), &buf, 200); err != nil {
+		t.Fatal(err)
+	}
+	return stripANSI(strings.TrimRight(buf.String(), "\n"))
+}
+
+// TestModulesOverPreviouslyUnusedData covers the modules added over fields
+// Claude Code already sends and the status line used to decode and discard.
+func TestModulesOverPreviouslyUnusedData(t *testing.T) {
+	tests := []struct {
+		token string
+		want  string
+	}{
+		{"$diff", "+342/-117"},
+		{"$dir", "dejavu"},
+		{"$api_duration", "api 1m 38s"},
+		{"$session_tokens", "↑218k ↓34k"},
+		{"$version", "v2.0.14"},
+		{"$output_style", "Explanatory"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.token, func(t *testing.T) {
+			if got := renderToken(t, tt.token, richInputJSON); got != tt.want {
+				t.Errorf("%s rendered %q, want %q", tt.token, got, tt.want)
+			}
+		})
+	}
+}
+
+// TestModulesHideWithoutData checks a module with nothing to say disappears
+// rather than rendering an empty shell like "+0/-0".
+func TestModulesHideWithoutData(t *testing.T) {
+	const bare = `{"model":{"display_name":"Opus 5"}}`
+	for _, token := range []string{"$diff", "$dir", "$session_tokens", "$version", "$output_style"} {
+		t.Run(token, func(t *testing.T) {
+			if got := renderToken(t, "$model "+token, bare); got != "[Opus 5]" {
+				t.Errorf("rendered %q, want just the model", got)
+			}
+		})
+	}
+}
+
+// TestUnreferencedModulesAreNotRendered is what keeps the module list cheap to
+// grow: a module absent from every line template does no work at all. For
+// $status that work is an HTTP request.
+func TestUnreferencedModulesAreNotRendered(t *testing.T) {
+	cfg := config.Default()
+	cfg.Lines = []string{"$model | $cost"}
+
+	var in model.Input
+	if err := json.Unmarshal([]byte(richInputJSON), &in); err != nil {
+		t.Fatal(err)
+	}
+
+	got := renderModules(&cfg, &in, 200)
+	for _, token := range []string{"$model", "$cost"} {
+		if _, ok := got[token]; !ok {
+			t.Errorf("%s is on the line but was not rendered", token)
+		}
+	}
+	for _, token := range []string{"$status", "$context_bar", "$rate_5h", "$diff"} {
+		if _, ok := got[token]; ok {
+			t.Errorf("%s is not on any line but was rendered", token)
+		}
+	}
+}
+
+// TestModuleTokensAreUnambiguous guards the substitution: tokens are replaced
+// by scanning for their literal text, so one token being a prefix of another
+// would let the longer one be corrupted by the shorter.
+func TestModuleTokensAreUnambiguous(t *testing.T) {
+	for i, a := range moduleDefs {
+		if !strings.HasPrefix(a.token, "$") || len(a.token) < 2 {
+			t.Errorf("token %q is not a $name", a.token)
+		}
+		for j, b := range moduleDefs {
+			if i == j {
+				continue
+			}
+			if a.token == b.token {
+				t.Errorf("duplicate token %q", a.token)
+			}
+			if strings.HasPrefix(b.token, a.token) {
+				t.Errorf("token %q is a prefix of %q", a.token, b.token)
+			}
+		}
+	}
+}
+
+// TestEveryModuleHasConfig checks each module resolves to a configuration, so
+// a new entry cannot be half-wired.
+func TestEveryModuleHasConfig(t *testing.T) {
+	cfg := config.Default()
+	for _, def := range moduleDefs {
+		if def.conf == nil || def.value == nil {
+			t.Fatalf("%s: conf or value is nil", def.token)
+		}
+		if _, ok := tokenIndex[def.token]; !ok {
+			t.Errorf("%s is missing from tokenIndex", def.token)
+		}
+		def.conf(&cfg) // must not panic
+	}
+}
+
+func TestReferencedModules(t *testing.T) {
+	used := referencedModules([]string{"$model | $cost", "$dir $unknown_token"})
+
+	want := map[string]bool{"$model": true, "$cost": true, "$dir": true}
+	for i, def := range moduleDefs {
+		if used[i] != want[def.token] {
+			t.Errorf("%s: referenced = %v, want %v", def.token, used[i], want[def.token])
+		}
 	}
 }

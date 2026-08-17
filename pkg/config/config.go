@@ -30,6 +30,14 @@ type Config struct {
 	Status        ModuleConfig    `toml:"status"`
 	RateLimit5h   ThresholdConfig `toml:"rate_limit_5h"`
 	RateLimit7d   ThresholdConfig `toml:"rate_limit_7d"`
+
+	// Modules over data Claude Code sends but the default line does not show.
+	Diff          ModuleConfig `toml:"diff"`
+	Dir           ModuleConfig `toml:"dir"`
+	APIDuration   ModuleConfig `toml:"api_duration"`
+	SessionTokens ModuleConfig `toml:"session_tokens"`
+	Version       ModuleConfig `toml:"version"`
+	OutputStyle   ModuleConfig `toml:"output_style"`
 }
 
 // ModuleConfig holds fields common to every module.
@@ -126,6 +134,13 @@ func Default() Config {
 			CriticalThreshold: 90,
 			CriticalStyle:     "red",
 		},
+
+		Diff:          ModuleConfig{MinTermWidth: 100},
+		Dir:           ModuleConfig{Style: "blue"},
+		APIDuration:   ModuleConfig{Symbol: "api ", MinTermWidth: 100},
+		SessionTokens: ModuleConfig{Style: "dimmed", MinTermWidth: 100},
+		Version:       ModuleConfig{Style: "dimmed", Format: "v{value}"},
+		OutputStyle:   ModuleConfig{Style: "dimmed"},
 	}
 }
 

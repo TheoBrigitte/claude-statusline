@@ -9,11 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Optional modules over session data that was decoded and discarded: `$diff`
+  (lines added/removed), `$dir`, `$api_duration`, `$session_tokens`,
+  `$version`, `$output_style`. None are on the default line; add their token to
+  `lines` to display them
+- Modules are declared in a single table, so adding one means one entry and one
+  config field rather than edits in three places
+
 - `pkg/width` — measures a rendered string in terminal cells: ANSI escape
   sequences are skipped and text is counted per grapheme cluster
 
 ### Changed
 
+- Modules absent from every `lines` entry are no longer rendered, which also
+  skips the `$status` HTTP request when the token is not displayed
+- `[context_bar]` now honours its `format` field, like every other module
 - Fork of [TheoBrigitte/claude-statusline](https://github.com/TheoBrigitte/claude-statusline):
   module path is now `github.com/keyamasabaya/claude-statusline`, so
   `go install github.com/keyamasabaya/claude-statusline@latest` resolves

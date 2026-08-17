@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -152,5 +153,75 @@ func TestLoadInvalidTOML(t *testing.T) {
 	_, err := Load(path)
 	if err == nil {
 		t.Error("expected error for invalid TOML")
+	}
+}
+
+// TestLoadOptionalModules covers the module tables that are configurable but
+// absent from the default line.
+func TestLoadOptionalModules(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "optional.toml")
+	contents := `
+lines = ["$dir | $diff | $session_tokens"]
+
+[diff]
+style = "green"
+format = "({value})"
+
+[dir]
+style = "bold blue"
+min_term_width = 60
+
+[api_duration]
+disabled = true
+
+[session_tokens]
+symbol = "tok "
+
+[version]
+format = "{value}"
+
+[output_style]
+style = "italic"
+`
+	if err := os.WriteFile(path, []byte(contents), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	cfg, err := Load(path)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if cfg.Diff.Style != "green" || cfg.Diff.Format != "({value})" {
+		t.Errorf("diff = %+v", cfg.Diff)
+	}
+	if cfg.Dir.Style != "bold blue" || cfg.Dir.MinTermWidth != 60 {
+		t.Errorf("dir = %+v", cfg.Dir)
+	}
+	if !cfg.APIDuration.Disabled {
+		t.Error("api_duration should be disabled")
+	}
+	if cfg.SessionTokens.Symbol != "tok " {
+		t.Errorf("session_tokens.symbol = %q", cfg.SessionTokens.Symbol)
+	}
+	// An override replaces the default rather than merging with it.
+	if cfg.Version.Format != "{value}" {
+		t.Errorf("version.format = %q, want the override", cfg.Version.Format)
+	}
+	if cfg.OutputStyle.Style != "italic" {
+		t.Errorf("output_style.style = %q", cfg.OutputStyle.Style)
+	}
+}
+
+// TestDefaultLineOnlyUsesCoreModules pins that the optional modules stay off
+// the default output until a user asks for them.
+func TestDefaultLineOnlyUsesCoreModules(t *testing.T) {
+	cfg := Default()
+	for _, token := range []string{"$diff", "$dir", "$api_duration", "$session_tokens", "$version", "$output_style"} {
+		for _, line := range cfg.Lines {
+			if strings.Contains(line, token) {
+				t.Errorf("%s is on the default line %q", token, line)
+			}
+		}
 	}
 }
