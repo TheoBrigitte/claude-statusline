@@ -21,13 +21,17 @@
 
 ## Features
 
-📦 **Modules** — each independently configurable:
+📦 **Modules** — each independently configurable, and only rendered when the
+layout actually uses them:
 - **Model** — active Claude model name (e.g. `[Opus 4.6]`)
 - **Context bar** — visual progress bar of context window usage (`###------`)
 - **Context tokens** — numeric token counts with SI formatting (e.g. `42k/200k tokens`)
 - **Context percentage** — context usage as a percentage (e.g. `5%`)
 - **Cost** — session cost in USD (`$1.23`)
 - **Duration** — total API duration (`4m 5s`)
+- **Diff, directory, session tokens, API duration, version, output style** —
+  optional modules over the rest of the session data (see
+  [Optional modules](#optional-modules))
 - **Status** — live Claude API health from `status.claude.com` with 10-minute file-based cache (🟢/🟡/🔴)
 - **Rate limits** — 5-hour and 7-day usage limits with usage %, reset countdown, and threshold colors (`󰊚 5h: 42% ~2h30m`)
 
@@ -304,6 +308,42 @@ critical_style = "bold red"
 [rate_limit_7d]
 disabled = true   # show only the 5-hour limit
 ```
+
+#### Optional modules
+
+These render data Claude Code already sends but the default line does not show.
+They are configured like any other module; add their token to `lines` to display
+them. Each hides itself when the session has nothing to report.
+
+| Token             | Table              | Renders                          | Example        |
+|-------------------|--------------------|----------------------------------|----------------|
+| `$diff`           | `[diff]`           | Lines added and removed          | `+342/-117`    |
+| `$dir`            | `[dir]`            | Working directory name           | `dejavu`       |
+| `$api_duration`   | `[api_duration]`   | Time spent in API calls          | `api 1m 38s`   |
+| `$session_tokens` | `[session_tokens]` | Session input/output token total | `↑218k ↓34k`   |
+| `$version`        | `[version]`        | Claude Code version              | `v2.0.14`      |
+| `$output_style`   | `[output_style]`   | Active output style              | `Explanatory`  |
+
+`$session_tokens` counts everything the session has sent and received, which
+keeps growing; `$context_tokens` counts what currently occupies the context
+window, which drops on compaction.
+
+```toml
+lines = [
+  "$dir | $model | $context_bar $context_pct",
+  "$diff | $session_tokens | $cost | $duration $api_duration",
+]
+
+[diff]
+style = "green"
+
+[dir]
+style = "bold blue"
+format = "{value}/"
+```
+
+Modules absent from every entry in `lines` are not rendered at all — which is
+also how you switch off the `$status` network request: leave the token out.
 
 ### Styles
 
