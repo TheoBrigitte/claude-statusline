@@ -7,6 +7,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -131,24 +132,24 @@ func Default() Config {
 
 // Load reads the TOML config file. If path is empty, it searches the default
 // location. Returns the default config merged with any file-level overrides.
-func Load(path string) (Config, error) {
+func Load(path string) (*Config, error) {
 	cfg := Default()
 
 	if path == "" {
 		path = defaultPath()
 	}
 	if path == "" {
-		return cfg, nil
+		return &cfg, nil
 	}
 
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return cfg, nil
+		return nil, fmt.Errorf("config file %s does not exist", path)
 	}
 
 	if _, err := toml.DecodeFile(path, &cfg); err != nil {
-		return cfg, err
+		return nil, fmt.Errorf("failed to decode config file %s: %w", path, err)
 	}
-	return cfg, nil
+	return &cfg, nil
 }
 
 // defaultPath returns ~/.config/claude-statusline.toml if it exists, else "".

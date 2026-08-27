@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Fixed
 
 - Increase status request timeout to 30 seconds
+- Return an error in case of invalid/non-existing config file
 
 ## [0.2.0] - 2026-06-23
 

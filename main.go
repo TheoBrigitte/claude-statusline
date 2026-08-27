@@ -135,7 +135,7 @@ type moduleResult struct {
 }
 
 // renderModules renders every module into a map keyed by $token name.
-func renderModules(cfg config.Config, in model.Input, termWidth int) map[string]moduleResult {
+func renderModules(cfg *config.Config, in model.Input, termWidth int) map[string]moduleResult {
 	currentUsage := model.ParseCurrentUsage(in.ContextWindow.CurrentUsage)
 	contextPct := 0
 	if in.ContextWindow.UsedPercentage != nil {
