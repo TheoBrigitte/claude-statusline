@@ -7,8 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-13
+
 ### Added
 
+- Show upstream status message when Claude API is degraded
 - `--debug-log` flag to append debug logs to a file
 - `--input-log` flag to append raw status JSON updates to a `.jsonl` file
 - Debug logs for terminal width, module widths, context bar shrink and output lines
@@ -53,6 +56,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Responsive layout with auto-wrapping and terminal width detection
 - Performance optimizations for fast rendering
 
-[Unreleased]: https://github.com/TheoBrigitte/claude-statusline/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/TheoBrigitte/claude-statusline/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/TheoBrigitte/claude-statusline/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/TheoBrigitte/claude-statusline/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/TheoBrigitte/claude-statusline/releases/tag/v0.1.0
