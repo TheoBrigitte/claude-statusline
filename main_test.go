@@ -32,10 +32,10 @@ func testInput(b *testing.B) model.Input {
 	return in
 }
 
-func testConfig() config.Config {
+func testConfig() *config.Config {
 	cfg := config.Default()
 	cfg.Status.Disabled = true // avoid network/file I/O in benchmarks
-	return cfg
+	return &cfg
 }
 
 // BenchmarkRunWith benchmarks the full main pipeline: config loading,

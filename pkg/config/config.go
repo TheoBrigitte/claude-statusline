@@ -14,7 +14,10 @@ import (
 	"github.com/BurntSushi/toml"
 )
 
-const defaultConfigName = "claude-statusline.toml"
+const (
+	defaultConfigName    = "claude-statusline.toml"
+	defaultCriticalStyle = "red"
+)
 
 // Config is the top-level configuration.
 type Config struct {
@@ -82,7 +85,7 @@ func Default() Config {
 				WarnThreshold:     40,
 				WarnStyle:         "yellow",
 				CriticalThreshold: 90,
-				CriticalStyle:     "red",
+				CriticalStyle:     defaultCriticalStyle,
 			},
 			FillChar:  "#",
 			EmptyChar: "-",
@@ -113,7 +116,7 @@ func Default() Config {
 			WarnThreshold:     60,
 			WarnStyle:         "fg:#ff8800",
 			CriticalThreshold: 90,
-			CriticalStyle:     "red",
+			CriticalStyle:     defaultCriticalStyle,
 		},
 		RateLimit7d: ThresholdConfig{
 			ModuleConfig: ModuleConfig{
@@ -125,7 +128,7 @@ func Default() Config {
 			WarnThreshold:     60,
 			WarnStyle:         "fg:#ff8800",
 			CriticalThreshold: 90,
-			CriticalStyle:     "red",
+			CriticalStyle:     defaultCriticalStyle,
 		},
 	}
 }

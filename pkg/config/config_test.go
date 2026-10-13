@@ -66,13 +66,13 @@ func TestDefaultPreservesOriginalBehaviour(t *testing.T) {
 	}
 }
 
-func TestLoadMissingFileReturnsDefaults(t *testing.T) {
+func TestLoadMissingFileReturnsError(t *testing.T) {
 	cfg, err := Load("/nonexistent/path/to/config.toml")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+	if err == nil {
+		t.Fatal("expected error for missing config file")
 	}
-	if cfg.Separator != " | " {
-		t.Errorf("expected defaults, got separator %q", cfg.Separator)
+	if cfg != nil {
+		t.Errorf("expected nil config, got %+v", cfg)
 	}
 }
 
