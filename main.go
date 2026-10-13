@@ -8,7 +8,10 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"log"
+	"maps"
 	"os"
+	"slices"
 	"strings"
 
 	"github.com/mattn/go-runewidth"
@@ -26,17 +29,43 @@ var (
 	configPath string
 	logFile    string
 	debug      bool
+	debugLog   string
+
+	// debugLogger is nil unless --debug or --debug-log is set.
+	debugLogger *log.Logger
 )
 
 func main() {
-	flag.BoolVar(&debug, "debug", false, "Enable debug mode with verbose logging to stderr")
+	flag.BoolVar(&debug, "debug", false, "Deprecated: use --debug-log. Enable debug mode with verbose logging to stderr")
 	flag.StringVar(&configPath, "config", "", "Path to config file (optional)")
-	flag.StringVar(&logFile, "log-file", "", "Path to a .jsonl file to append raw status updates to")
+	flag.StringVar(&logFile, "log-file", "", "Deprecated: use --input-log. Path to a .jsonl file to append raw status updates to")
+	flag.StringVar(&logFile, "input-log", "", "Path to a .jsonl file to append raw status updates to")
+	flag.StringVar(&debugLog, "debug-log", "", "Path to a file to append debug logs to (enables debug mode)")
 	flag.Parse()
 
+	if debugLog != "" {
+		f, err := os.OpenFile(debugLog, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644) //nolint:gosec // G302: log file, world-readable is fine
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "opening debug log: %v\n", err)
+			os.Exit(1)
+		}
+		defer f.Close() //nolint:errcheck
+		debugLogger = log.New(f, "", log.LstdFlags|log.Lmicroseconds)
+	} else if debug {
+		debugLogger = log.New(os.Stderr, "", log.LstdFlags|log.Lmicroseconds)
+	}
+
 	if err := run(configPath, logFile); err != nil {
+		debugf("error: %v", err)
 		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+		os.Exit(1) //nolint:gocritic // exitAfterDefer: debug log is append-only
+	}
+}
+
+// debugf writes a debug message when debug logging is enabled.
+func debugf(format string, args ...any) {
+	if debugLogger != nil {
+		debugLogger.Printf(format, args...)
 	}
 }
 
@@ -59,9 +88,7 @@ func run(configPath, logFile string) error {
 	termWidth, err := terminal.Width()
 	if err != nil {
 		termWidth = terminal.DefaultWidth
-		if debug {
-			fmt.Fprintf(os.Stdout, "warning: failed to get terminal width, defaulting to %d: %v\n", termWidth, err) //nolint:errcheck
-		}
+		debugf("warning: failed to get terminal width, defaulting to %d: %v", termWidth, err)
 	}
 	return runWith(configPath, logFile, os.Stdin, os.Stdout, termWidth)
 }
@@ -110,21 +137,28 @@ func runWith(configPath, logFile string, r io.Reader, w io.Writer, termWidth int
 
 	modules := renderModules(cfg, in, termWidth)
 	available := termWidth - cfg.Padding
+	debugf("config=%q term_width=%d padding=%d available=%d", configPath, termWidth, cfg.Padding, available)
+	for _, token := range slices.Sorted(maps.Keys(modules)) {
+		debugf("module %s width=%d text=%q", token, modules[token].rawLen, modules[token].rendered)
+	}
 
 	for _, lineTemplate := range cfg.Lines {
 		parts := buildParts(lineTemplate, cfg.Separator, modules)
+		debugf("line template=%q width=%d", lineTemplate, lineWidth(parts, cfg.Separator))
 
 		// Shrink an auto-sized context bar so the line fits on a single row.
 		bar := modules["$context_bar"]
 		if cfg.ContextBar.Width == 0 && bar.rendered != "" && strings.Contains(lineTemplate, "$context_bar") {
 			if overflow := lineWidth(parts, cfg.Separator) - available + 1; overflow > 0 {
 				barWidth := max(bar.rawLen-runewidth.StringWidth(cfg.ContextBar.Symbol)-overflow, 1)
+				debugf("context bar overflow=%d bar_width=%d", overflow, barWidth)
 				modules["$context_bar"] = renderContextBar(cfg.ContextBar, contextPercent(in), barWidth)
 				parts = buildParts(lineTemplate, cfg.Separator, modules)
 			}
 		}
 
 		for _, line := range layout.Lines(available, cfg.Separator, parts) {
+			debugf("output %q", line)
 			fmt.Fprintln(w, line) //nolint:errcheck // best-effort stdout write
 		}
 	}

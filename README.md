@@ -91,11 +91,22 @@ output looks like:
 
 ### Command-line flags
 
-| Flag                | Description                                                     |
-|---------------------|-----------------------------------------------------------------|
-| `--config <path>`   | Path to a config file (overrides the default discovery order)   |
-| `--log-file <path>` | Append each raw status JSON update as a line to a `.jsonl` file |
-| `--debug`           | Verbose logging to stderr                                       |
+| Flag                 | Description                                                     |
+|----------------------|-----------------------------------------------------------------|
+| `--config <path>`    | Path to a config file (overrides the default discovery order)   |
+| `--input-log <path>` | Append each raw status JSON update as a line to a `.jsonl` file |
+| `--log-file <path>`  | Deprecated: use `--input-log`                                   |
+| `--debug-log <path>` | Append debug logs to a file (enables debug mode)                |
+| `--debug`            | Deprecated: use `--debug-log`. Verbose logging to stderr        |
+
+Claude Code does not display stderr. Use `--debug-log` to debug a running status line:
+
+```json
+"statusLine": {
+  "type": "command",
+  "command": "claude-statusline --debug-log /tmp/claude-statusline.log --input-log /tmp/claude-statusline.jsonl"
+}
+```
 
 ## ⚙️ Configuration
 

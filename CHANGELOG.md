@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- `--debug-log` flag to append debug logs to a file
+- `--input-log` flag to append raw status JSON updates to a `.jsonl` file
+- Debug logs for terminal width, module widths, context bar shrink and output lines
+
+### Deprecated
+
+- `--debug` flag, use `--debug-log`
+- `--log-file` flag, use `--input-log`
+
 ### Fixed
 
 - Increase status request timeout to 30 seconds
