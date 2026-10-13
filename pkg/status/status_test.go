@@ -28,8 +28,8 @@ func TestFetch(t *testing.T) {
 		defer srv.Close()
 
 		got := Fetch(srv.Client(), srv.URL)
-		if got != StatusWARN+" degraded" {
-			t.Errorf("got %q, want %q", got, StatusWARN+" degraded")
+		if got != StatusWARN+" Partially Degraded" {
+			t.Errorf("got %q, want %q", got, StatusWARN+" Partially Degraded")
 		}
 	})
 

@@ -93,5 +93,6 @@ func Fetch(client *http.Client, url string) string {
 	if strings.Contains(strings.ToLower(r.Status.Description), "operational") {
 		return StatusOK
 	}
-	return StatusWARN + " degraded"
+	words := strings.Fields(r.Status.Description)
+	return StatusWARN + " " + strings.Join(words[:min(2, len(words))], " ")
 }
