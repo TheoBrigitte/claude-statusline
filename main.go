@@ -137,14 +137,18 @@ func runWith(configPath, logFile string, r io.Reader, w io.Writer, termWidth int
 
 	modules := renderModules(cfg, in, termWidth)
 	available := termWidth - cfg.Padding
-	debugf("config=%q term_width=%d padding=%d available=%d", configPath, termWidth, cfg.Padding, available)
-	for _, token := range slices.Sorted(maps.Keys(modules)) {
-		debugf("module %s width=%d text=%q", token, modules[token].rawLen, modules[token].rendered)
+	if debugLogger != nil {
+		debugf("config=%q term_width=%d padding=%d available=%d", configPath, termWidth, cfg.Padding, available)
+		for _, token := range slices.Sorted(maps.Keys(modules)) {
+			debugf("module %s width=%d text=%q", token, modules[token].rawLen, modules[token].rendered)
+		}
 	}
 
 	for _, lineTemplate := range cfg.Lines {
 		parts := buildParts(lineTemplate, cfg.Separator, modules)
-		debugf("line template=%q width=%d", lineTemplate, lineWidth(parts, cfg.Separator))
+		if debugLogger != nil {
+			debugf("line template=%q width=%d", lineTemplate, lineWidth(parts, cfg.Separator))
+		}
 
 		// Shrink an auto-sized context bar so the line fits on a single row.
 		bar := modules["$context_bar"]
@@ -158,7 +162,9 @@ func runWith(configPath, logFile string, r io.Reader, w io.Writer, termWidth int
 		}
 
 		for _, line := range layout.Lines(available, cfg.Separator, parts) {
-			debugf("output %q", line)
+			if debugLogger != nil {
+				debugf("output %q", line)
+			}
 			fmt.Fprintln(w, line) //nolint:errcheck // best-effort stdout write
 		}
 	}
