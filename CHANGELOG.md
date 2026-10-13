@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 - Increase status request timeout to 30 seconds
 - Return an error in case of invalid/non-existing config file
+- Shrink auto-sized context bar to fit the status line on one line
+- Measure module width in terminal columns instead of bytes
 
 ## [0.2.0] - 2026-06-23
 
