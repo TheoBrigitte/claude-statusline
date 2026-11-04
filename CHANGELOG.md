@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
-- Require Go 1.27 to build from source
+- Upgrade to Go 1.27
 
 ## [0.3.0] - 2026-10-13
 
