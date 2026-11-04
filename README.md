@@ -13,7 +13,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/TheoBrigitte/claude-statusline/blob/main/LICENSE)
 
 <p align="center">
-    <img src="assets/claude-statusline-demo.gif" alt="claude-statusline default output during a session, crossing warn and critical thresholds">
+    <img src="assets/claude-statusline.png" alt="claude-statusline in a Claude Code session">
 </p>
 
 </div>
@@ -87,7 +87,7 @@ Works out of the box with sensible defaults — no config file needed. The defau
 output looks like:
 
 <p align="center">
-    <img src="assets/claude-statusline-only.png" alt="claude-statusline default output">
+    <img src="assets/claude-statusline-demo.gif" alt="claude-statusline default output during a session, crossing warn and critical thresholds">
 </p>
 
 ### Command-line flags
