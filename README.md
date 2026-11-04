@@ -28,8 +28,8 @@
 - **Context tokens** — numeric token counts with SI formatting (e.g. `42k/200k tokens`)
 - **Context percentage** — context usage as a percentage (e.g. `5%`)
 - **Cost** — session cost in USD (`$1.23`)
-- **Duration** — total API duration (`4m 5s`)
-- **Status** — live Claude API health from `status.claude.com` with 10-minute file-based cache (🟢/🟡/🔴)
+- **Duration** — total session wall-clock time (`4m 5s`)
+- **Status** — live Claude API health from `status.claude.com` with 10-minute file-based cache (`🟢`, `🟡 Partially Degraded`, `🔴`)
 - **Rate limits** — 5-hour and 7-day usage limits with usage %, reset countdown, and threshold colors (`󰊚 5h: 42% ~2h30m`)
 
 ⚙️ **Configuration** (TOML):
@@ -43,6 +43,7 @@
 - Modifiers: `bold`, `dim`, `italic`, `underline` — freely composable
 
 📏 **Responsive layout**:
+- Auto-sizing context bar: shrinks to keep its line on one row
 - Auto-wrapping: segments overflow to new lines when exceeding terminal width
 - Per-module `min_term_width` and `max_term_width` to hide based on terminals width
 - Terminal width detection via `/dev/tty` (works with piped stdin)
@@ -135,7 +136,7 @@ critical_style = "bold red"
 
 Config file discovery order:
 
-1. `--config <path>` flag
+1. `--config <path>` flag (exits with an error if the file does not exist)
 2. `~/.config/claude-statusline.toml`
 3. Built-in defaults
 
@@ -190,7 +191,7 @@ Visual bar showing context window usage. Supports threshold-based color changes.
 | Field                | Default    | Description                                  |
 |----------------------|------------|----------------------------------------------|
 | `style`              | `"green"`  | Base color                                   |
-| `width`              | `0` (auto) | Fixed char width, or 0 for auto              |
+| `width`              | `0` (auto) | Fixed char width, or 0 for auto-fit          |
 | `fill_char`          | `"#"`      | Character for the filled portion             |
 | `empty_char`         | `"-"`      | Character for the empty portion              |
 | `warn_threshold`     | `40.0`     | % at which style switches to `warn_style`    |
@@ -276,7 +277,9 @@ style = "dim"
 
 #### `[status]` — API Health
 
-Displays Claude API operational status as an emoji indicator (`🟢`, `🟡 degraded`, `🔴 error`).
+Displays Claude API operational status as an emoji indicator. When the API is not
+fully operational, the first two words of the upstream status message follow the
+emoji (`🟢`, `🟡 Partially Degraded`, `🔴 request: <error>`).
 
 ```toml
 [status]
@@ -522,7 +525,9 @@ The status line adapts to your terminal width automatically:
   `[model]` defaults to `min_term_width = 80`, so it hides on narrow terminals.
 - **Auto-sizing context bar** — when `[context_bar].width` is `0` (the
   default), the bar width scales to one-quarter of the terminal width (minimum
-  10 characters).
+  10 characters). If its line still exceeds the terminal width, the bar shrinks
+  (down to 1 character) so the line fits on one row. When the line does not
+  fit even at 1 character, it wraps.
 
 This means the same config works well across different terminal sizes — from a
 narrow split pane to a full-width monitor.
