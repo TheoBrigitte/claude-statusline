@@ -1,3 +1,5 @@
+<a name="readme-top"></a>
+
 <div align="center">
 
 # claude-statusline
@@ -13,24 +15,59 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/TheoBrigitte/claude-statusline/blob/main/LICENSE)
 
 <p align="center">
-    <img src="assets/claude-statusline.png" alt="claude-statusline screenshot" height="800px">
+    <img src="assets/claude-statusline.png" alt="claude-statusline in a Claude Code session">
 </p>
 
 </div>
 
 `claude-statusline` adds a status line to your Claude Code sessions to track context window usage, costs, Claude API status, and your session duration. It is fully customizable with multi-segment modules via a TOML config file — colors, layout, thresholds, Nerd Font icons, and more.
 
+<p align="center">
+  <a href="#preview">Preview</a> ·
+  <a href="#features">Features</a> ·
+  <a href="#install">Install</a> ·
+  <a href="#configuration">Configuration</a> ·
+  <a href="#examples">Examples</a> ·
+  <a href="#responsive-layout">Responsive Layout</a> ·
+  <a href="#performance">Performance</a> ·
+  <a href="#building">Building</a> ·
+  <a href="#credits">Credits</a> ·
+  <a href="#license">License</a>
+</p>
+
+<a name="preview"></a>
+
+## 👀 Preview
+
+Works out of the box with sensible defaults — no config file needed. The default
+output looks like:
+
+<p align="center">
+    <img src="assets/claude-statusline-demo.gif" alt="claude-statusline default output during a session, crossing warn and critical thresholds">
+</p>
+
+The layout adapts to the terminal width. The default config at 160, 120, 90 and
+60 columns (see [Responsive Layout](#responsive-layout)):
+
+<p align="center">
+    <img src="assets/claude-statusline-responsive.png" alt="claude-statusline default output at 160, 120, 90 and 60 columns">
+</p>
+
+<p align="right"><a href="#readme-top">⬆️ Back to top</a></p>
+
+<a name="features"></a>
+
 ## Features
 
 📦 **Modules** — each independently configurable:
-- **Model** — active Claude model name (e.g. `[Opus 4.6]`)
+- **Model** — active Claude model name (e.g. `[Opus 5.5]`)
 - **Context bar** — visual progress bar of context window usage (`###------`)
 - **Context tokens** — numeric token counts with SI formatting (e.g. `42k/200k tokens`)
 - **Context percentage** — context usage as a percentage (e.g. `5%`)
 - **Cost** — session cost in USD (`$1.23`)
 - **Duration** — total session wall-clock time (`4m 5s`)
 - **Status** — live Claude API health from `status.claude.com` with 10-minute file-based cache (`🟢`, `🟡 Partially Degraded`, `🔴`)
-- **Rate limits** — 5-hour and 7-day usage limits with usage %, reset countdown, and threshold colors (`󰊚 5h: 42% ~2h30m`)
+- **Rate limits** — 5-hour and 7-day usage limits with usage %, reset countdown, and threshold colors (`󰊚 5h: 42.00% ~2h30m`)
 
 ⚙️ **Configuration** (TOML):
 - Per-module: `disabled`, `style`, `symbol`, `format` (`{value}`/`{symbol}` placeholders, plus `{reset}` on rate limits), `min_term_width`, `max_term_width`
@@ -52,6 +89,10 @@
 - Designed with speed in mind, and compiled as a static Golang binary.
 - Extremely fast rendering < 0.019 ms
 - See [performance benchmarks](#performance)
+
+<p align="right"><a href="#readme-top">⬆️ Back to top</a></p>
+
+<a name="install"></a>
 
 ## ⚡ Install
 
@@ -83,13 +124,6 @@ After installing the binary, configure it into Claude Code in `~/.claude/setting
 }
 ```
 
-Works out of the box with sensible defaults — no config file needed. The default
-output looks like:
-
-<p align="center">
-    <img src="assets/claude-statusline-only.png" alt="claude-statusline only screenshot" height="800px">
-</p>
-
 ### Command-line flags
 
 | Flag                 | Description                                                     |
@@ -108,6 +142,10 @@ Claude Code does not display stderr. Use `--debug-log` to debug a running status
   "command": "claude-statusline --debug-log /tmp/claude-statusline.log --input-log /tmp/claude-statusline.jsonl"
 }
 ```
+
+<p align="right"><a href="#readme-top">⬆️ Back to top</a></p>
+
+<a name="configuration"></a>
 
 ## ⚙️ Configuration
 
@@ -191,6 +229,7 @@ Visual bar showing context window usage. Supports threshold-based color changes.
 | Field                | Default    | Description                                  |
 |----------------------|------------|----------------------------------------------|
 | `style`              | `"green"`  | Base color                                   |
+| `min_term_width`     | `60`       | Hidden on narrow terminals                   |
 | `width`              | `0` (auto) | Fixed char width, or 0 for auto-fit          |
 | `fill_char`          | `"#"`      | Character for the filled portion             |
 | `empty_char`         | `"-"`      | Character for the empty portion              |
@@ -216,9 +255,10 @@ critical_style = "bold fg:#f7768e"
 
 Displays current/total token usage like `(27k/1M tokens)`.
 
-| Field    | Default       | Description                       |
-|----------|---------------|-----------------------------------|
-| `format` | `"({value})"` | Wrapped in parentheses by default |
+| Field            | Default       | Description                       |
+|------------------|---------------|-----------------------------------|
+| `format`         | `"({value})"` | Wrapped in parentheses by default |
+| `min_term_width` | `100`         | Hidden on narrow terminals        |
 
 ```toml
 [context_tokens]
@@ -289,7 +329,7 @@ disabled = true   # hide if you don't care about API status
 #### `[rate_limit_5h]` / `[rate_limit_7d]` — Usage Rate Limits
 
 Display Claude usage against the 5-hour and 7-day rate limits, as a percentage
-with a countdown until the limit resets (e.g. `󰊚 5h: 42% ~2h30m`). Both support
+with a countdown until the limit resets (e.g. `󰊚 5h: 42.00% ~2h30m`). Both support
 threshold-based color changes. In addition to `{value}` and `{symbol}`, the
 `format` string accepts a `{reset}` placeholder for the reset countdown; when no
 reset time is available, `{reset}` and any non-space prefix (such as `~`) are
@@ -364,6 +404,10 @@ symbol = " "    # nf-fa-clock
 ```
 
 Browse icons at [nerdfonts.com/cheat-sheet](https://www.nerdfonts.com/cheat-sheet).
+
+<p align="right"><a href="#readme-top">⬆️ Back to top</a></p>
+
+<a name="examples"></a>
 
 ## 📚 Examples
 
@@ -514,6 +558,10 @@ disabled = true
 disabled = true
 ```
 
+<p align="right"><a href="#readme-top">⬆️ Back to top</a></p>
+
+<a name="responsive-layout"></a>
+
 ## 📏 Responsive Layout
 
 The status line adapts to your terminal width automatically:
@@ -531,6 +579,10 @@ The status line adapts to your terminal width automatically:
 
 This means the same config works well across different terminal sizes — from a
 narrow split pane to a full-width monitor.
+
+<p align="right"><a href="#readme-top">⬆️ Back to top</a></p>
+
+<a name="performance"></a>
 
 ## 🚀 Performance
 
@@ -570,6 +622,10 @@ Run benchmarks yourself:
 make bench
 ```
 
+<p align="right"><a href="#readme-top">⬆️ Back to top</a></p>
+
+<a name="building"></a>
+
 ## 🛠️ Building
 
 ```sh
@@ -580,6 +636,10 @@ make lint-all       # Run all linters
 make install        # Build and install to ~/.local/bin
 ```
 
+<p align="right"><a href="#readme-top">⬆️ Back to top</a></p>
+
+<a name="credits"></a>
+
 ## 🙏 Credits
 
 - [Claude Code](https://claude.ai/code) for the session JSON API and status line integration
@@ -587,6 +647,12 @@ make install        # Build and install to ~/.local/bin
 - [Nerd Fonts](https://www.nerdfonts.com) for the extensive icon library
 - [CShip](https://github.com/stephenleo/cship) for the inspiration on configuration format
 
+<p align="right"><a href="#readme-top">⬆️ Back to top</a></p>
+
+<a name="license"></a>
+
 ## 📄 License
 
 MIT
+
+<p align="right"><a href="#readme-top">⬆️ Back to top</a></p>
