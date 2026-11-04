@@ -13,7 +13,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/TheoBrigitte/claude-statusline/blob/main/LICENSE)
 
 <p align="center">
-    <img src="assets/claude-statusline.png" alt="claude-statusline screenshot" height="800px">
+    <img src="assets/claude-statusline-demo.gif" alt="claude-statusline default output during a session, crossing warn and critical thresholds">
 </p>
 
 </div>
@@ -23,14 +23,14 @@
 ## Features
 
 📦 **Modules** — each independently configurable:
-- **Model** — active Claude model name (e.g. `[Opus 4.6]`)
+- **Model** — active Claude model name (e.g. `[Opus 5.5]`)
 - **Context bar** — visual progress bar of context window usage (`###------`)
 - **Context tokens** — numeric token counts with SI formatting (e.g. `42k/200k tokens`)
 - **Context percentage** — context usage as a percentage (e.g. `5%`)
 - **Cost** — session cost in USD (`$1.23`)
 - **Duration** — total session wall-clock time (`4m 5s`)
 - **Status** — live Claude API health from `status.claude.com` with 10-minute file-based cache (`🟢`, `🟡 Partially Degraded`, `🔴`)
-- **Rate limits** — 5-hour and 7-day usage limits with usage %, reset countdown, and threshold colors (`󰊚 5h: 42% ~2h30m`)
+- **Rate limits** — 5-hour and 7-day usage limits with usage %, reset countdown, and threshold colors (`󰊚 5h: 42.00% ~2h30m`)
 
 ⚙️ **Configuration** (TOML):
 - Per-module: `disabled`, `style`, `symbol`, `format` (`{value}`/`{symbol}` placeholders, plus `{reset}` on rate limits), `min_term_width`, `max_term_width`
@@ -87,7 +87,7 @@ Works out of the box with sensible defaults — no config file needed. The defau
 output looks like:
 
 <p align="center">
-    <img src="assets/claude-statusline-only.png" alt="claude-statusline only screenshot" height="800px">
+    <img src="assets/claude-statusline-only.png" alt="claude-statusline default output">
 </p>
 
 ### Command-line flags
@@ -191,6 +191,7 @@ Visual bar showing context window usage. Supports threshold-based color changes.
 | Field                | Default    | Description                                  |
 |----------------------|------------|----------------------------------------------|
 | `style`              | `"green"`  | Base color                                   |
+| `min_term_width`     | `60`       | Hidden on narrow terminals                   |
 | `width`              | `0` (auto) | Fixed char width, or 0 for auto-fit          |
 | `fill_char`          | `"#"`      | Character for the filled portion             |
 | `empty_char`         | `"-"`      | Character for the empty portion              |
@@ -216,9 +217,10 @@ critical_style = "bold fg:#f7768e"
 
 Displays current/total token usage like `(27k/1M tokens)`.
 
-| Field    | Default       | Description                       |
-|----------|---------------|-----------------------------------|
-| `format` | `"({value})"` | Wrapped in parentheses by default |
+| Field            | Default       | Description                       |
+|------------------|---------------|-----------------------------------|
+| `format`         | `"({value})"` | Wrapped in parentheses by default |
+| `min_term_width` | `100`         | Hidden on narrow terminals        |
 
 ```toml
 [context_tokens]
@@ -289,7 +291,7 @@ disabled = true   # hide if you don't care about API status
 #### `[rate_limit_5h]` / `[rate_limit_7d]` — Usage Rate Limits
 
 Display Claude usage against the 5-hour and 7-day rate limits, as a percentage
-with a countdown until the limit resets (e.g. `󰊚 5h: 42% ~2h30m`). Both support
+with a countdown until the limit resets (e.g. `󰊚 5h: 42.00% ~2h30m`). Both support
 threshold-based color changes. In addition to `{value}` and `{symbol}`, the
 `format` string accepts a `{reset}` placeholder for the reset countdown; when no
 reset time is available, `{reset}` and any non-space prefix (such as `~`) are
@@ -528,6 +530,12 @@ The status line adapts to your terminal width automatically:
   10 characters). If its line still exceeds the terminal width, the bar shrinks
   (down to 1 character) so the line fits on one row. When the line does not
   fit even at 1 character, it wraps.
+
+The default config at 160, 120, 90 and 60 columns:
+
+<p align="center">
+    <img src="assets/claude-statusline-responsive.png" alt="claude-statusline default output at 160, 120, 90 and 60 columns">
+</p>
 
 This means the same config works well across different terminal sizes — from a
 narrow split pane to a full-width monitor.
