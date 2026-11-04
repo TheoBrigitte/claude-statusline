@@ -99,16 +99,13 @@ The layout adapts to the terminal width. The default config at 160, 120, 90 and
 
 ### 🚀 Method 1: Download the binary (recommended)
 
-Linux and macOS:
-
 ```sh
-OS=$(uname -s | tr '[:upper:]' '[:lower:]')
-ARCH=$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')
+OS=linux; ARCH=amd64
 curl --create-dirs -fsSLo ~/.local/bin/claude-statusline "https://github.com/TheoBrigitte/claude-statusline/releases/latest/download/claude-statusline.$OS-$ARCH"
 chmod +x ~/.local/bin/claude-statusline
 ```
 
-Windows binaries are available in the [latest release](https://github.com/TheoBrigitte/claude-statusline/releases/latest) assets.
+Set `OS` and `ARCH` to match your platform. All binaries are in the [latest release](https://github.com/TheoBrigitte/claude-statusline/releases/latest) assets.
 
 ### 📦 Method 2: go install
 
@@ -137,7 +134,6 @@ Or apply it with [jq](https://jqlang.org):
 
 ```sh
 SETTINGS=~/.claude/settings.json
-mkdir -p ~/.claude && [ -f "$SETTINGS" ] || echo '{}' > "$SETTINGS"
 jq '.statusLine = {type: "command", command: "claude-statusline"}' "$SETTINGS" > "$SETTINGS.tmp" && mv "$SETTINGS.tmp" "$SETTINGS"
 ```
 
@@ -156,8 +152,9 @@ Start `claude`. The status line shows up right away.
 | `--log-file <path>`  | Deprecated: use `--input-log`                                   |
 | `--debug-log <path>` | Append debug logs to a file (enables debug mode)                |
 | `--debug`            | Deprecated: use `--debug-log`. Verbose logging to stderr        |
+| `-h`, `--help`       | Print usage and exit                                            |
 
-Claude Code does not display stderr. Use `--debug-log` to debug a running status line:
+Claude Code hides the status line's stderr. Write debug logs to a file with `--debug-log`:
 
 ```json
 "statusLine": {
