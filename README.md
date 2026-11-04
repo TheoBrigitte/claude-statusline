@@ -26,6 +26,7 @@
   <a href="#preview">Preview</a> ·
   <a href="#features">Features</a> ·
   <a href="#install">Install</a> ·
+  <a href="#command-line-flags">Command-line flags</a> ·
   <a href="#configuration">Configuration</a> ·
   <a href="#examples">Examples</a> ·
   <a href="#responsive-layout">Responsive Layout</a> ·
@@ -96,17 +97,18 @@ The layout adapts to the terminal width. The default config at 160, 120, 90 and
 
 ## ⚡ Install
 
-### 🚀 Method 1: curl installer (recommended)
+### 🚀 Method 1: Download the binary (recommended)
+
+Linux and macOS:
 
 ```sh
-OS=linux; ARCH=amd64
-curl --create-dirs -sSLo ~/.local/bin/claude-statusline "https://github.com/TheoBrigitte/claude-statusline/releases/latest/download/claude-statusline.$OS-$ARCH"
+OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+ARCH=$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')
+curl --create-dirs -fsSLo ~/.local/bin/claude-statusline "https://github.com/TheoBrigitte/claude-statusline/releases/latest/download/claude-statusline.$OS-$ARCH"
 chmod +x ~/.local/bin/claude-statusline
 ```
 
-Also supports linux, darwin (macOS), and windows on amd64 and arm64, see [Makefile](Makefile).
-
-This downloads the binary to `~/.local/bin/claude-statusline`.
+Windows binaries are available in the [latest release](https://github.com/TheoBrigitte/claude-statusline/releases/latest) assets.
 
 ### 📦 Method 2: go install
 
@@ -116,7 +118,14 @@ Requires the Golang toolchain.
 go install github.com/TheoBrigitte/claude-statusline@latest
 ```
 
-After installing the binary, configure it into Claude Code in `~/.claude/settings.json`:
+> [!IMPORTANT]
+> Claude Code finds `claude-statusline` through your `PATH`.
+> Make sure the install directory is in your `PATH`: `~/.local/bin` for Method 1, `$(go env GOPATH)/bin` for Method 2.
+> Check with `command -v claude-statusline`.
+
+### 🔧 Configure Claude Code
+
+Add the status line to `~/.claude/settings.json`:
 
 ```json
 {
@@ -124,7 +133,21 @@ After installing the binary, configure it into Claude Code in `~/.claude/setting
 }
 ```
 
-### Command-line flags
+Or apply it with [jq](https://jqlang.org):
+
+```sh
+SETTINGS=~/.claude/settings.json
+mkdir -p ~/.claude && [ -f "$SETTINGS" ] || echo '{}' > "$SETTINGS"
+jq '.statusLine = {type: "command", command: "claude-statusline"}' "$SETTINGS" > "$SETTINGS.tmp" && mv "$SETTINGS.tmp" "$SETTINGS"
+```
+
+Start `claude`. The status line shows up right away.
+
+<p align="right"><a href="#readme-top">⬆️ Back to top</a></p>
+
+<a name="command-line-flags"></a>
+
+## 🐚 Command-line flags
 
 | Flag                 | Description                                                     |
 |----------------------|-----------------------------------------------------------------|
