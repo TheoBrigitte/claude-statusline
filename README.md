@@ -1,3 +1,5 @@
+<a name="readme-top"></a>
+
 <div align="center">
 
 # claude-statusline
@@ -19,6 +21,41 @@
 </div>
 
 `claude-statusline` adds a status line to your Claude Code sessions to track context window usage, costs, Claude API status, and your session duration. It is fully customizable with multi-segment modules via a TOML config file — colors, layout, thresholds, Nerd Font icons, and more.
+
+<p align="center">
+  <a href="#preview">Preview</a> ·
+  <a href="#features">Features</a> ·
+  <a href="#install">Install</a> ·
+  <a href="#configuration">Configuration</a> ·
+  <a href="#examples">Examples</a> ·
+  <a href="#responsive-layout">Responsive Layout</a> ·
+  <a href="#performance">Performance</a> ·
+  <a href="#building">Building</a> ·
+  <a href="#credits">Credits</a> ·
+  <a href="#license">License</a>
+</p>
+
+<a name="preview"></a>
+
+## 👀 Preview
+
+Works out of the box with sensible defaults — no config file needed. The default
+output looks like:
+
+<p align="center">
+    <img src="assets/claude-statusline-demo.gif" alt="claude-statusline default output during a session, crossing warn and critical thresholds">
+</p>
+
+The layout adapts to the terminal width. The default config at 160, 120, 90 and
+60 columns (see [Responsive Layout](#responsive-layout)):
+
+<p align="center">
+    <img src="assets/claude-statusline-responsive.png" alt="claude-statusline default output at 160, 120, 90 and 60 columns">
+</p>
+
+<p align="right"><a href="#readme-top">⬆️ Back to top</a></p>
+
+<a name="features"></a>
 
 ## Features
 
@@ -53,6 +90,10 @@
 - Extremely fast rendering < 0.019 ms
 - See [performance benchmarks](#performance)
 
+<p align="right"><a href="#readme-top">⬆️ Back to top</a></p>
+
+<a name="install"></a>
+
 ## ⚡ Install
 
 ### 🚀 Method 1: curl installer (recommended)
@@ -83,13 +124,6 @@ After installing the binary, configure it into Claude Code in `~/.claude/setting
 }
 ```
 
-Works out of the box with sensible defaults — no config file needed. The default
-output looks like:
-
-<p align="center">
-    <img src="assets/claude-statusline-demo.gif" alt="claude-statusline default output during a session, crossing warn and critical thresholds">
-</p>
-
 ### Command-line flags
 
 | Flag                 | Description                                                     |
@@ -108,6 +142,10 @@ Claude Code does not display stderr. Use `--debug-log` to debug a running status
   "command": "claude-statusline --debug-log /tmp/claude-statusline.log --input-log /tmp/claude-statusline.jsonl"
 }
 ```
+
+<p align="right"><a href="#readme-top">⬆️ Back to top</a></p>
+
+<a name="configuration"></a>
 
 ## ⚙️ Configuration
 
@@ -367,6 +405,10 @@ symbol = " "    # nf-fa-clock
 
 Browse icons at [nerdfonts.com/cheat-sheet](https://www.nerdfonts.com/cheat-sheet).
 
+<p align="right"><a href="#readme-top">⬆️ Back to top</a></p>
+
+<a name="examples"></a>
+
 ## 📚 Examples
 
 ### 1. Minimal
@@ -516,6 +558,10 @@ disabled = true
 disabled = true
 ```
 
+<p align="right"><a href="#readme-top">⬆️ Back to top</a></p>
+
+<a name="responsive-layout"></a>
+
 ## 📏 Responsive Layout
 
 The status line adapts to your terminal width automatically:
@@ -531,14 +577,12 @@ The status line adapts to your terminal width automatically:
   (down to 1 character) so the line fits on one row. When the line does not
   fit even at 1 character, it wraps.
 
-The default config at 160, 120, 90 and 60 columns:
-
-<p align="center">
-    <img src="assets/claude-statusline-responsive.png" alt="claude-statusline default output at 160, 120, 90 and 60 columns">
-</p>
-
 This means the same config works well across different terminal sizes — from a
 narrow split pane to a full-width monitor.
+
+<p align="right"><a href="#readme-top">⬆️ Back to top</a></p>
+
+<a name="performance"></a>
 
 ## 🚀 Performance
 
@@ -578,6 +622,10 @@ Run benchmarks yourself:
 make bench
 ```
 
+<p align="right"><a href="#readme-top">⬆️ Back to top</a></p>
+
+<a name="building"></a>
+
 ## 🛠️ Building
 
 ```sh
@@ -588,6 +636,10 @@ make lint-all       # Run all linters
 make install        # Build and install to ~/.local/bin
 ```
 
+<p align="right"><a href="#readme-top">⬆️ Back to top</a></p>
+
+<a name="credits"></a>
+
 ## 🙏 Credits
 
 - [Claude Code](https://claude.ai/code) for the session JSON API and status line integration
@@ -595,6 +647,12 @@ make install        # Build and install to ~/.local/bin
 - [Nerd Fonts](https://www.nerdfonts.com) for the extensive icon library
 - [CShip](https://github.com/stephenleo/cship) for the inspiration on configuration format
 
+<p align="right"><a href="#readme-top">⬆️ Back to top</a></p>
+
+<a name="license"></a>
+
 ## 📄 License
 
 MIT
+
+<p align="right"><a href="#readme-top">⬆️ Back to top</a></p>
