@@ -174,7 +174,7 @@ func runWith(configPath, logFile string, r io.Reader, w io.Writer, termWidth int
 // buildParts renders each separator-delimited segment of a line template.
 func buildParts(lineTemplate, separator string, modules map[string]moduleResult) []*layout.Part {
 	var parts []*layout.Part
-	for _, seg := range strings.Split(lineTemplate, separator) {
+	for seg := range strings.SplitSeq(lineTemplate, separator) {
 		rendered := renderSegment(strings.TrimSpace(seg), modules)
 		if rendered == "" {
 			continue
