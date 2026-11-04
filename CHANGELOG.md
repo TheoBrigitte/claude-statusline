@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-04
+
 ### Changed
 
 - Upgrade to Go 1.27
@@ -60,7 +62,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Responsive layout with auto-wrapping and terminal width detection
 - Performance optimizations for fast rendering
 
-[Unreleased]: https://github.com/TheoBrigitte/claude-statusline/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/TheoBrigitte/claude-statusline/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/TheoBrigitte/claude-statusline/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/TheoBrigitte/claude-statusline/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/TheoBrigitte/claude-statusline/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/TheoBrigitte/claude-statusline/releases/tag/v0.1.0
